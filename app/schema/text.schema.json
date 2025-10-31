@@ -1,0 +1,69 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Aligned Ancient Text Schema",
+  "description": "用于古文/外文翻译的对齐文本格式，支持多轨道映射。",
+  "type": "object",
+  "properties": {
+    "title": {
+      "description": "文本的完整标题",
+      "type": "string"
+    },
+    "tracks": {
+      "description": "定义本文档中可用的所有轨道名称",
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "examples": [
+        ["pinyin", "ancient", "modern"]
+      ]
+    },
+    "content": {
+      "description": "文本的主要内容，由段落组成",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/paragraph"
+      }
+    }
+  },
+  "required": ["title", "tracks", "content"],
+  "definitions": {
+    "paragraph": {
+      "description": "一个自然段落，由多个对齐的分段组成",
+      "type": "object",
+      "properties": {
+        "segments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/segment"
+          }
+        }
+      },
+      "required": ["segments"]
+    },
+    "segment": {
+      "description": "一个对齐的文本单元，包含不同轨道上的内容。对象的键名应与顶层的 'tracks' 数组中的值对应。",
+      "type": "object",
+      "properties": {
+        "pinyin": {
+          "description": "拼音轨道内容",
+          "type": "string"
+        },
+        "ancient": {
+          "description": "古文原文轨道内容",
+          "type": "string"
+        },
+        "modern": {
+          "description": "白话文翻译轨道内容",
+          "type": "string"
+        }
+      },
+      "required": ["ancient"],
+      "additionalProperties": {
+        "description": "允许未来扩展其他轨道",
+        "type": "string"
+      }
+    }
+  }
+}

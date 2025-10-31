@@ -1,6 +1,6 @@
 <template>
   <ClientOnly>
-    <LazyGame cfg="/01-zhanguoce/01-qin/01-shangyang/"></LazyGame>
+    <LazyGame cfg="/02-zhanguoce/01-qin/01-shangyang/"></LazyGame>
   </ClientOnly>
 </template>
 
