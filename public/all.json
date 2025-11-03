@@ -1,0 +1,106 @@
+{
+  "games": [
+    {
+      "id": 10001,
+      "title": "东周1 秦兴师临周而求九鼎[代]",
+      "path": "/01-zhanguoce/02-qin/01-shangyang/",
+      "type": "wenyan"
+    },
+    {
+      "id": 10002,
+      "title": "秦一卷1 卫鞅亡魏入秦",
+      "path": "/01-zhanguoce/02-qin/01-shangyang/",
+      "type": "wenyan"
+    },
+    {
+      "id": 20001,
+      "title": "绘本1[代]",
+      "path": "/01-zhanguoce/02-qin/01-shangyang/",
+      "type": "huiben"
+    },
+    {
+      "id": 20002,
+      "title": "绘本2[代]",
+      "path": "/01-zhanguoce/02-qin/01-shangyang/",
+      "type": "huiben"
+    },
+    {
+      "id": 30001,
+      "title": "实验1[代]",
+      "path": "/01-zhanguoce/02-qin/01-shangyang/",
+      "type": "shiyan"
+    },
+    {
+      "id": 30002,
+      "title": "实验2[代]",
+      "path": "/01-zhanguoce/02-qin/01-shangyang/",
+      "type": "shiyan"
+    }
+  ],
+  "categories": [
+    {
+      "title": "绘本",
+      "categories": [
+        {
+          "title": "初级",
+          "games": [
+            20001,
+            20002
+          ]
+        },
+        {
+          "title": "中级",
+          "games": [
+            20001,
+            20002
+          ]
+        },
+        {
+          "title": "高级",
+          "games": [
+            20001,
+            20002
+          ]
+        }
+      ]
+    },
+    {
+      "title": "实验",
+      "categories": [
+        {
+          "title": "物理",
+          "games": [
+            30001,
+            30002
+          ]
+        },
+        {
+          "title": "化学",
+          "games": [
+            30001,
+            30002
+          ]
+        }
+      ]
+    },
+    {
+      "title": "历史",
+      "categories": [
+        {
+          "title": "战国策",
+          "games": [
+            10001,
+            10002
+          ]
+        },
+        {
+          "title": "古文观止",
+          "games": [
+            10001,
+            10002
+          ]
+        }
+      ]
+    }
+  ]
+}

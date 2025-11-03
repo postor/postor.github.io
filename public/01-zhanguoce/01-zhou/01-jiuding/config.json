@@ -1,0 +1,163 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "九鼎的试炼",
+  "version": "1.0.0",
+  "startScene": "SCENE_ZHOU_PALACE_1",
+  "viewport": {
+    "width": 1920,
+    "height": 1080
+  },
+  "domains": [],
+  "resources": {
+    "bg_zhou_palace": { "type": "image", "url": "./images/bg_zhou_palace.png" },
+    "bg_qi_palace": { "type": "image", "url": "./images/bg_qi_palace.png" },
+    "char_zhou_king_worried": { "type": "image", "url": "./images/char_zhou_king_worried.png" },
+    "char_zhou_king_relieved": { "type": "image", "url": "./images/char_zhou_king_relieved.png" },
+    "char_zhou_king_desperate": { "type": "image", "url": "./images/char_zhou_king_desperate.png" },
+    "char_qi_king_pleased": { "type": "image", "url": "./images/char_qi_king_pleased.png" },
+    "char_qi_king_greedy": { "type": "image", "url": "./images/char_qi_king_greedy.png" },
+    "char_qi_king_thoughtful": { "type": "image", "url": "./images/char_qi_king_thoughtful.png" },
+    "char_qi_king_annoyed": { "type": "image", "url": "./images/char_qi_king_annoyed.png" },
+    "player_calm": { "type": "image", "url": "./images/player_calm.png" },
+    "player_scheming": { "type": "image", "url": "./images/player_scheming.png" },
+    "cg_true_ending": { "type": "image", "url": "./images/cg_true_ending.png" },
+    "cg_qin_ending": { "type": "image", "url": "./images/cg_qin_ending.png" },
+    "cg_vassal_ending": { "type": "image", "url": "./images/cg_vassal_ending.png" }
+  },
+  "scenes": {
+    "SCENE_ZHOU_PALACE_1": {
+      "meta": { "background": "bg_zhou_palace" },
+      "resources": {
+        "KingZhou": { "ref": "char_zhou_king_worried", "position": { "x": 0.5, "y": 1 } },
+        "Player": { "ref": "player_calm", "position": { "x": 0.5, "y": 1 } }
+      },
+      "steps": [
+        { "show": ["KingZhou"] },
+        { "dialog": { "speaker": "周天子", "content": "（忧心忡忡）……爱卿，秦国虎狼之师已兵临城下，指名索要象征天下的九鼎。我周室衰微，若不给，宗庙难保；若给了，先王之业将毁于我手……寡人寝食难安，为之奈何？" } },
+        { "hide": ["KingZhou"], "show": ["Player"] },
+        { "dialog": { "speaker": "你", "content": "（作为周室最信赖的策士，我必须为大王，为这风雨飘摇的王朝找到一条生路。）" } },
+        {
+          "choice": [
+            { "text": "“大王勿忧，臣请东借救于齐。”", "jump": "SCENE_QI_PALACE_1" },
+            { "text": "“委曲求全，将九鼎献给秦国吧。”", "jump": "ENDING_GIVE_TO_QIN" },
+            { "text": "“宁为玉碎，不为瓦全，与秦军决一死战！”", "jump": "ENDING_FIGHT_QIN" }
+          ]
+        }
+      ]
+    },
+    "SCENE_QI_PALACE_1": {
+      "meta": { "background": "bg_qi_palace" },
+      "resources": {
+        "KingQi": { "ref": "char_qi_king_pleased", "position": { "x": 0.5, "y": 1 } },
+        "Player": { "ref": "player_calm", "position": { "x": 0.5, "y": 1 } }
+      },
+      "steps": [
+        { "hide": ["Player"] },
+        { "dialog": { "speaker": "你", "content": "（我见到了齐王，他看起来对我的来意很感兴趣。）" } },
+        { "show": ["Player"] },
+        { "dialog": { "speaker": "你", "content": "大王，强秦无道，竟向我主索要九鼎。我主与群臣商议，与其将这天下重器送与暴秦，不如献给像齐国这样的东方大国。存亡继绝，是为美名；得传国九鼎，是为厚宝。恳请大王定夺！" } },
+        { "show": ["KingQi"] },
+        { "dialog": { "speaker": "齐王", "content": "（大笑）哈哈哈，先生所言极是！秦人贪暴，天下共知。寡人岂能坐视周室受辱！" } },
+        { "dialog": { "speaker": "齐王", "content": "来人！即刻发兵五万，命陈臣思为将，前去解周室之围！秦兵一退，寡人自会派人来取九鼎！" } },
+        { "dialog": { "narrator": "你成功说服了齐王。齐国出兵的消息传出，秦军果然闻风而退。但新的危机也随之而来……" } },
+        { "jump": "SCENE_ZHOU_PALACE_2" }
+      ]
+    },
+    "SCENE_ZHOU_PALACE_2": {
+      "meta": { "background": "bg_zhou_palace" },
+      "resources": {
+        "KingZhou": { "ref": "char_zhou_king_worried", "position": { "x": 0.5, "y": 1 } },
+        "Player": { "ref": "player_calm", "position": { "x": 0.5, "y": 1 } }
+      },
+      "steps": [
+        { "show": ["KingZhou"], "update": [{"target":"KingZhou", "ref":"char_zhou_king_relieved"}] },
+        { "dialog": { "speaker": "周天子", "content": "爱卿真乃国之栋梁！秦兵已退，全赖爱卿奔走之功啊！" } },
+        { "update": [{"target":"KingZhou", "ref":"char_zhou_king_worried"}] },
+        { "dialog": { "speaker": "周天子", "content": "可是……齐国使者已经在殿外等候，索要九鼎。这……这刚出虎口，又入狼窝，该如何是好？" } },
+        { "hide": ["KingZhou"], "show": ["Player"] },
+        { "dialog": { "speaker": "你", "content": "（齐国出兵是交易，如今来索要报酬也无可厚非。但九鼎乃周室根基，绝不可轻与。我必须再次化解危机。）" } },
+        {
+          "choice": [
+            { "text": "“大王勿忧，臣自有妙计，请再赴齐国。”", "jump": "SCENE_QI_PALACE_2" },
+            { "text": "“君无戏言，既然答应了，便献上九鼎吧。”", "jump": "ENDING_GIVE_TO_QI" }
+          ]
+        }
+      ]
+    },
+    "SCENE_QI_PALACE_2": {
+      "meta": { "background": "bg_qi_palace" },
+      "resources": {
+        "KingQi": { "ref": "char_qi_king_greedy", "position": { "x": 0.5, "y": 1 } },
+        "Player": { "ref": "player_scheming", "position": { "x": 0.5, "y": 1 } }
+      },
+      "steps": [
+        { "show": ["KingQi"] },
+        { "dialog": { "speaker": "齐王", "content": "先生又来了。寡人已助周室退敌，九鼎何时能送到临淄？" } },
+        { "hide": ["KingQi"], "show": ["Player"] },
+        { "dialog": { "speaker": "你", "content": "大王，我主对您的恩德感激不尽，正准备献上九鼎。只是不知大王打算经由何路，将九鼎运至齐国呢？" } },
+        { "show": ["KingQi"] },
+        { "dialog": { "speaker": "齐王", "content": "这有何难？寡人打算向魏国借道。" } },
+        { "dialog": { "speaker": "你", "content": "万万不可！魏王对九鼎觊觎已久，多次在晖台、少海密谋此事。鼎入魏境，恐怕就出不来了！" } },
+        { "update": [{"target":"KingQi", "ref":"char_qi_king_thoughtful"}] },
+        { "dialog": { "speaker": "齐王", "content": "嗯……有理。那寡人便向楚国借道。" } },
+        { "dialog": { "speaker": "你", "content": "也万万不可！楚王在叶庭之中谋划九鼎也不是一天两天了。鼎若入楚，同样是肉包子打狗，有去无回啊。" } },
+        { "update": [{"target":"KingQi", "ref":"char_qi_king_annoyed"}] },
+        { "dialog": { "speaker": "齐王", "content": "（不耐烦地）那依你之见，寡人究竟该如何将鼎运回齐国？" } },
+        { "dialog": { "speaker": "你", "content": "（恭敬地）大王，下臣也正为此事替大王发愁。这九鼎，并非寻常杯盘壶盏，可轻易携带。想当年武王伐纣，得此九鼎，每一鼎都需九万人牵引，九鼎合共八十一万人！再加上士卒护卫、器械给养，人数远超于此。如今大王纵有这么多人手，又从何处开辟出一条安全的道路呢？" } },
+        { "dialog": { "speaker": "你", "content": "下臣是真心替大王担忧啊！" } },
+        { "update": [{"target":"KingQi", "ref":"char_qi_king_thoughtful"}] },
+        { "dialog": { "speaker": "齐王", "content": "（沉默良久）……先生说了半天，看来是不打算给了？" } },
+        { "dialog": { "speaker": "你", "content": "岂敢欺瞒大国！只要大王能定下万全的运送之策，敝邑立刻迁鼎，恭候王命！" } },
+        { "dialog": { "speaker": "齐王", "content": "（长叹一声）罢了，罢了！此事休要再提！" } },
+        { "dialog": { "narrator": "你再次凭借智谋，让齐王知难而退，成功保住了九鼎。" } },
+        { "jump": "ENDING_TRUE" }
+      ]
+    },
+    "ENDING_TRUE": {
+      "meta": { "background": "cg_true_ending" },
+      "resources": {
+        "KingZhou": { "ref": "char_zhou_king_relieved", "position": { "x": 0.6, "y": 1 } },
+        "Player": { "ref": "player_calm", "position": { "x": 0.4, "y": 1 } }
+      },
+      "steps": [
+        { "op": [{ "domain": "global", "op": "set", "name": "gallery_true_ending", "value": true }] },
+        { "dialog": { "narrator": "【结局一：舌灿莲花】" } },
+        { "dialog": { "narrator": "你回到周王都，天子亲迎。凭借两次巧妙的外交辞令，你在虎狼之间保全了周室的尊严与国宝。你的名字，将作为智者的典范，被载入史册。" } },
+        { "dialog": { "speaker": "周天子", "content": "爱卿之功，可比上古先贤！有你在，我周室江山或可再延数百年！" } },
+        { "dialog": { "narrator": "虽然这只是暂时的喘息，但在那个列国兼并的时代，你为这个古老的王朝赢得了最宝贵的——时间和尊严。" } }
+      ]
+    },
+    "ENDING_GIVE_TO_QIN": {
+      "meta": { "background": "cg_qin_ending" },
+      "steps": [
+        { "op": [{ "domain": "global", "op": "set", "name": "gallery_qin_ending", "value": true }] },
+        { "dialog": { "narrator": "【结局二：屈辱献鼎】" } },
+        { "dialog": { "narrator": "你选择了最直接，也是最屈辱的道路。九鼎被装上大车，在秦军的监视下，缓缓离开了王都。周天子泣不成声，天下诸侯视周室为无物。" } },
+        { "dialog": { "narrator": "失去了法理与尊严的象征，周王朝名存实亡。不出数年，秦国便寻得新的借口，轻易地吞并了东周。你虽然保全了宗室一时，却成了亡国的罪人。" } }
+      ]
+    },
+    "ENDING_FIGHT_QIN": {
+      "meta": { "background": "cg_qin_ending" },
+      "resources": {
+        "KingZhou": { "ref": "char_zhou_king_desperate", "position": { "x": 0.5, "y": 1 } }
+      },
+      "steps": [
+        { "op": [{ "domain": "global", "op": "set", "name": "gallery_qin_ending", "value": true }] },
+        { "dialog": { "narrator": "【结局二：玉石俱焚】" } },
+        { "dialog": { "narrator": "你选择了以卵击石。周天子被你的血性感染，下令集结老弱残兵，与秦军决一死战。然而，在强秦的铁蹄之下，抵抗只是徒劳。" } },
+        { "show": ["KingZhou"] },
+        { "dialog": { "speaker": "周天子", "content": "（城破之日，立于宗庙前）列祖列宗在上，不肖子孙愧对先王……" } },
+        { "dialog": { "narrator": "王都陷落，宫室焚毁，九鼎亦被秦军夺走。你用一腔热血，捍卫了最后的尊严，但也让周室的血脉提前断绝。史书上，只留下一笔悲壮的注脚。" } }
+      ]
+    },
+    "ENDING_GIVE_TO_QI": {
+      "meta": { "background": "cg_vassal_ending" },
+      "steps": [
+        { "op": [{ "domain": "global", "op": "set", "name": "gallery_vassal_ending", "value": true }] },
+        { "dialog": { "narrator": "【结局三：依附为臣】" } },
+        { "dialog": { "narrator": "你认为对齐王许下的诺言不可背弃。在你的劝说下，周天子忍痛将九鼎献给了齐国。齐王大悦，将周室纳入自己的保护之下。" } },
+        { "dialog": { "narrator": "周王朝虽然失去了天下共主的地位，彻底沦为齐国的附庸，但在齐国的庇护下，反而获得了暂时的安宁。你为周室找到了一条苟延残喘的道路，是功是过，只能留给后人评说。" } }
+      ]
+    }
+  }
+}

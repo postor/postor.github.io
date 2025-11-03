@@ -1,0 +1,63 @@
+{
+  "meta": {
+    "title": "AVG Branching Sample",
+    "version": "1.0.0",
+    "author": "codex",
+    "description": "Morning choice: left to temple or right to city",
+    "startScene": "start",
+    "backgroundColor": "#1a1a1a",
+    "viewport": {"width": 800, "height": 600}
+  },
+  "resources": {
+    "bg1": {"type":"image", "url":"../images/bg1.png"},
+    "bg2": {"type":"image", "url":"../images/bg2.png"},
+    "bg3": {"type":"image", "url":"../images/bg3.png"},
+    "char1": {"type":"image", "url":"../images/char1.png", "scale":0.5, "position":{"x":650,"y":420}},
+    "music": {"type":"audio", "url":"../images/bg1.png", "audio":{"volume":0.0}}
+  },
+  "scenes": {
+    "start": {
+      "resources": {
+        "bg": {"ref":"bg3", "position":{"x":400,"y":300}},
+        "player": {"ref":"char1"}
+      },
+      "steps": [
+        {"act":"dialog", "args":{"text":"In the morning..."}, "wait":true},
+        {"act":"options", "args":{
+          "title":"Where shall I go?",
+          "items": [
+            {"text":"Go left", "goScene":"temple"},
+            {"text":"Go right", "goScene":"city"}
+          ]
+        }, "wait":true}
+      ]
+    },
+    "temple": {
+      "resources": {
+        "bg": {"ref":"bg2", "position":{"x":400,"y":300}},
+        "player": {"ref":"char1"}
+      },
+      "steps": [
+        {"act":"setAttr", "args":{"domain":"game","values":{"foundTemple":{"$set":true}}}},
+        {"act":"dialog", "args":{"text":"Found a temple."}, "wait":true},
+        {"act":"goScene", "args":{"to":"end"}}
+      ]
+    },
+    "city": {
+      "resources": {
+        "bg": {"ref":"bg1", "position":{"x":400,"y":300}},
+        "player": {"ref":"char1"}
+      },
+      "steps": [
+        {"act":"setAttr", "args":{"domain":"game","values":{"foundCity":{"$set":true}}}},
+        {"act":"dialog", "args":{"text":"Found a city."}, "wait":true},
+        {"act":"goScene", "args":{"to":"end"}}
+      ]
+    },
+    "end": {
+      "steps": [
+        {"act":"dialog", "args":{"text":"The end."}, "wait":true}
+      ]
+    }
+  }
+}

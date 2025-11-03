@@ -1,0 +1,63 @@
+
+User
+更改绘图风格为 绘制风格精细，高清日韩流行anime，角色统一白色背景，正面全身像，1:2，AVG游戏插图，重新生成prompt
+Model
+ThinkingThoughts
+(experimental)
+Auto
+Expand to view model thoughts
+
+chevron_right
+好的，遵照您的最新指示，我将AVG素材中的角色图片生成prompt进行全面更新。
+新的prompt将严格遵循以下标准：
+风格：精细、高清的日韩流行Anime风格 (Fine-detail, HD, popular modern anime style)。
+构图：正面全身像 (Front-facing, full-body portrait)。
+背景：统一的纯白色背景 (Plain white background)。
+比例：1:2 (--ar 1:2)。
+用途：明确为AVG游戏/视觉小说的角色立绘 (visual novel character sprite)。
+以下是更新后的完整Midjourney提示词列表。JSON配置文件中的资源名称保持不变，您可以直接使用这些新prompt来生成相应的角色图片资源。
+Midjourney 英文提示词列表 (角色部分已更新)
+背景 (Backgrounds - Unchanged):
+bg_palace_hall: grand ancient chinese palace hall, warring states period, massive bronze tripods, intricate wooden columns and beams, diffused light from high windows, solemn and imposing atmosphere, epic anime background art, detailed, wide angle --ar 16:9
+bg_street_day: bustling capital city street in ancient China, warring states era, orderly citizens, clean stone-paved road, traditional wooden buildings, guards patrolling, a sense of peace and order, vibrant colors, detailed anime scenery, by Makoto Shinkai style --ar 16:9
+bg_chamber_sick: dimly lit bedchamber in an ancient Chinese palace, a large ornate bed with silk curtains, medicinal herbs on a nearby table, heavy, somber atmosphere, cinematic lighting focusing on the bed, detailed anime background art --ar 16:9
+bg_palace_gloomy: the same grand palace hall as before, but now cast in deep shadows, moonlight streaming through windows, creating a cold and tense atmosphere, a sense of political danger, gloomy, cinematic, anime background art --ar 16:9
+角色 (Characters - Updated as Requested):
+shangyang_determined: full body character sprite of a determined ancient chinese strategist, Shang Yang, standing front-facing, sharp and intelligent eyes, firm jaw, wearing dark, simple but elegant robes, traditional topknot hairstyle, on a plain white background, popular modern anime style for a visual novel, highly detailed, clean line art, sharp focus --ar 1:2
+shangyang_stern: full body character sprite of a stern ancient chinese official, Shang Yang, standing front-facing with a cold and unforgiving expression, furrowed brows, arms crossed, wearing dark formal robes, on a plain white background, popular modern anime style for a visual novel, highly detailed, dramatic and clean art --ar 1:2
+shangyang_thoughtful: full body character sprite of a thoughtful ancient chinese scholar-official, Shang Yang, standing front-facing with a contemplative expression, one hand to his chin, wearing intricate robes, on a plain white background, modern anime style for a visual novel, detailed face, sharp focus --ar 1:2
+shangyang_shocked: full body character sprite of a shocked ancient chinese official, Shang Yang, standing front-facing, eyes wide with disbelief and mouth slightly open, dynamic and emotional expression, wearing elegant robes, on a plain white background, modern anime visual novel style, high detail --ar 1:2
+shangyang_resigned: full body character sprite of a resigned ancient chinese man, Shang Yang, standing front-facing with a sad, weary but accepting smile, facing his fate with dignity, wearing slightly worn robes, on a plain white background, emotional anime style for a visual novel, clean lines, high quality --ar 1:2
+xiaogong_determined: full body character sprite of a determined and wise ancient chinese ruler, Duke Xiao of Qin, mid 40s, standing front-facing with a visionary gaze, regal but approachable posture, wearing royal robes of the warring states period, on a plain white background, high quality modern anime art for a visual novel --ar 1:2
+xiaogong_pleased: full body character sprite of a pleased ancient chinese ruler, Duke Xiao of Qin, standing front-facing with a warm and satisfied smile, expressing genuine happiness, wearing detailed royal attire, on a plain white background, modern anime visual novel style, vibrant and clean --ar 1:2
+xiaogong_ill: full body character sprite of a sick and weary ancient chinese ruler, Duke Xiao of Qin, standing front-facing but looking frail, pale face, heavy eyelids, expression of physical weakness, wearing royal robes but slightly disheveled, on a plain white background, emotional anime visual novel style, detailed --ar 1:2
+huiwang_cold: full body character sprite of a cold and calculating young chinese prince, future King Huiwen of Qin, late teens, standing front-facing with sharp, suspicious eyes, a neutral but unfriendly expression, wearing luxurious princely robes, on a plain white background, detailed modern anime visual novel style, clean lines --ar 1:2
+huiwang_angry: full body character sprite of an angry chinese king, King Huiwen of Qin, standing front-facing in a powerful stance, face contorted in rage, clenched fists, wearing intimidating royal robes, on a plain white background, modern anime visual novel style, sharp details, dynamic expression --ar 1:2
+tutor_arrogant: full body character sprite of an arrogant and elderly chinese court tutor, standing front-facing with an arrogant posture, looking down his nose with disdain, wearing traditional scholar's robes and cap, on a plain white background, detailed modern anime style for a visual novel --ar 1:2
+advisor_cunning: full body character sprite of a cunning and manipulative ancient chinese court advisor, standing front-facing with a sly, scheming smile, slightly hunched posture, hands clasped, on a plain white background, modern anime villain style for a visual novel, sharp and clean details --ar 1:2
+CG 插图 (Gallery Illustrations - Unchanged):
+cg_historical_end: Tragic epic scene of an ancient Chinese scholar, Shang Yang, about to be executed by dismemberment by chariots in a public square, a crowd of emotionless faces watching, a gray and oppressive sky, he looks up with a resigned and dignified expression, dramatic, emotional, detailed anime illustration, cinematic composition --ar 16:9
+cg_happy_end: A serene and peaceful scene of a retired scholar, Shang Yang, in his 50s with some grey hair, sitting by a stream in a lush bamboo forest, reading a scroll with a gentle smile, warm sunlight filtering through the leaves, a sense of contentment and wisdom, beautiful landscape, high-quality anime illustration, by Studio Ghibli style --ar 16:9
+cg_mediocre_end: An empty and dusty ancient Chinese throne room, cobwebs on the grand columns, the throne is empty and covered in a layer of dust, a single beam of weak light illuminates the scene, symbolizing failure and decay, melancholic and desolate atmosphere, detailed anime background art --ar 16:9
+Model
+ThinkingThoughts
+(experimental)
+Auto
+Expand to view model thoughts
+
+chevron_right
+Model
+ThinkingThoughts
+(experimental)
+Auto
+Expand to view model thoughts
+
+chevron_right
+Model
+ThinkingThoughts
+(experimental)
+Auto
+Expand to view model thoughts
+
+chevron_right
+Use Arrow Up and Arrow Down to select a turn, Enter to jump to it, and Escape to return to the chat.
