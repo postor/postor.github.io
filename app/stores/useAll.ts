@@ -24,7 +24,7 @@ export const useAllStore = defineStore('all', {
     async load() {
       if (this.loaded) return
       try {
-        const res = await fetch('/all.json')
+        const res = await fetch('/learn-game/all.json')
         if (!res.ok) throw new Error(`HTTP ${res.status}`)
         const data = await res.json()
         this.games = data.games || []

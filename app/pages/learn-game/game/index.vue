@@ -1,12 +1,12 @@
 <template>
   <ClientOnly>
-    <LazyGame :cfg="cfg"></LazyGame>
+    <LazyGame :cfg="'/learn-game' + cfg"></LazyGame>
   </ClientOnly>
 </template>
 
 <script setup lang="ts">
 definePageMeta({
-  layout:'clean'
+  layout: 'clean'
 })
 
 import { ref, onMounted } from 'vue'
@@ -26,5 +26,4 @@ onMounted(() => {
 })
 </script>
 
-<style scoped>
-</style>
+<style scoped></style>
