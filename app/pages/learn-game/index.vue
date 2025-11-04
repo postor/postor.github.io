@@ -97,10 +97,10 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useAllStore } from '~/stores/useAll'
+import { useLearnAllStore } from '~/stores/useLearnAllStore'
 
 // Local state
-const store = useAllStore()
+const store = useLearnAllStore()
 const route = useRoute()
 const loading = ref(false)
 const error = ref<string | null>(null)

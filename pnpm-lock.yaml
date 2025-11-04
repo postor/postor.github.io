@@ -47,6 +47,16 @@ importers:
       vue-router:
         specifier: ^4.6.3
         version: 4.6.3(vue@3.5.22(typescript@5.9.3))
+    devDependencies:
+      '@iconify-json/bi':
+        specifier: ^1.2.6
+        version: 1.2.6
+      '@iconify-json/codicon':
+        specifier: ^1.2.31
+        version: 1.2.31
+      '@iconify-json/material-symbols':
+        specifier: ^1.2.44
+        version: 1.2.44
 
 packages:
 
@@ -802,6 +812,15 @@ packages:
 
   '@floating-ui/vue@1.1.9':
     resolution: {integrity: sha512-BfNqNW6KA83Nexspgb9DZuz578R7HT8MZw1CfK9I6Ah4QReNWEJsXWHN+SdmOVLNGmTPDi+fDT535Df5PzMLbQ==}
+
+  '@iconify-json/bi@1.2.6':
+    resolution: {integrity: sha512-fWfLr1/+DJDe8+rIUXxMwvmWBZFlxRtM59sYnrezJ2xX87QKyXVw3QuforJ4kF2Orrz85J+JTRG6305vaJ7flA==}
+
+  '@iconify-json/codicon@1.2.31':
+    resolution: {integrity: sha512-FXMyfeay4kfxLvzU3RQ4uOwXvy4oUUvKo/CihRg+fcnWLs/fFGjfVS3GouM9x1ra8xgpzCRSg7Vl2zGZm264nw==}
+
+  '@iconify-json/material-symbols@1.2.44':
+    resolution: {integrity: sha512-NAJjhswaK9FxBeIzFFsNygws7wHtmAkBWhF4YEwn1NZIMbA+LNITqhUiq6sP5mOdKQqnoritFTlQaZ47a5BgBg==}
 
   '@iconify/collections@1.0.613':
     resolution: {integrity: sha512-7jqZqr7oGiDF7pxZgFtQIsyLTNNrO85zinaj8oDG7Cejp2SgmjAd5x50b8fvaMkPUzr6LDRbcn+U2odNqmdc4A==}
@@ -5848,6 +5867,18 @@ snapshots:
     transitivePeerDependencies:
       - '@vue/composition-api'
       - vue
+
+  '@iconify-json/bi@1.2.6':
+    dependencies:
+      '@iconify/types': 2.0.0
+
+  '@iconify-json/codicon@1.2.31':
+    dependencies:
+      '@iconify/types': 2.0.0
+
+  '@iconify-json/material-symbols@1.2.44':
+    dependencies:
+      '@iconify/types': 2.0.0
 
   '@iconify/collections@1.0.613':
     dependencies:

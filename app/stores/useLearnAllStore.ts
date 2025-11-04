@@ -13,7 +13,7 @@ type RawCategory = {
   games?: number[]
 }
 
-export const useAllStore = defineStore('all', {
+export const useLearnAllStore = defineStore('useLearnAllStore', {
   state: () => ({
     loaded: false as boolean,
     games: [] as Game[],
@@ -102,4 +102,4 @@ export const useAllStore = defineStore('all', {
   }
 })
 
-export default useAllStore
+export default useLearnAllStore
