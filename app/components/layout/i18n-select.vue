@@ -1,20 +1,21 @@
 <script setup lang="ts">
-import * as locales from '@nuxt/ui/locale'
+const { locale, setLocale, locales: i18nLocales } = useI18n()
 
-const { locale, setLocale } = useI18n()
- 
- // Limit available locales to English and Chinese only.
- // Assumption: locale objects exported from '@nuxt/ui/locale' include a `code` or `locale` property
- // (e.g. { code: 'en', name: 'English' }). If not, we fall back to string matching.
- const availableLocales = Object.values(locales).filter((l: any) =>
-   ['en', 'zh'].includes(l?.code ?? l?.locale ?? String(l))
- )
+// Map i18n locales to ULocaleSelect format with all required properties
+const locales = computed(() => 
+  i18nLocales.value.map(l => ({
+    code: typeof l === 'string' ? l : l.code,
+    name: typeof l === 'string' ? l : (l.name || l.code),
+    dir: 'ltr' as const,
+    messages: {}
+  }))
+)
 </script>
 
 <template>
   <ULocaleSelect
     v-model="locale"
-    :locales="availableLocales"
-    @update:model-value="setLocale($event as string)"
+    :locales="locales"
+    @update:model-value="setLocale($event as any)"
   />
 </template>

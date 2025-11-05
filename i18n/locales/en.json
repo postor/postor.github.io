@@ -1,0 +1,24 @@
+{
+  "nav": {
+    "home": "Home",
+    "recent": "Recent",
+    "files": "Files",
+    "read": "Read"
+  },
+  "bookReading": {
+    "recentBooks": "Recent Books",
+    "noRecentBooks": "No recent books.",
+    "progress": "Progress",
+    "markAsRead": "Mark as Read",
+    "noBookSelected": "No book selected. Please select a book from Recent or Files."
+  },
+  "learnGame": {
+    "home": "Home",
+    "learnWhilePlaying": "Learn While Playing",
+    "selectCategory": "Select a category or book to start reading",
+    "allCategories": "All Categories",
+    "loading": "Loading…",
+    "loadFailed": "Load failed",
+    "categories": "Categories"
+  }
+}

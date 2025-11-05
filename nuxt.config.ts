@@ -26,12 +26,17 @@ export default defineNuxtConfig({
     // for example: 'bulma', or '~/assets/css/another.scss'
   ],
   i18n: {
+    defaultLocale: 'zh',
     locales: [{
       code: 'zh',
-      name: '中文'
+      name: '中文',
+      file: 'zh.json'
     }, {
       code: 'en',
-      name: 'English'
-    }]
+      name: 'English',
+      file: 'en.json'
+    }],
+    langDir: 'locales',
+    strategy: 'no_prefix'
   }
 })

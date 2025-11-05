@@ -5,10 +5,10 @@
       <nav v-if="breadcrumbs.length > 0" class="text-sm text-slate-600 mb-4" aria-label="Breadcrumb">
         <ol class="flex items-center gap-2">
           <li>
-            <NuxtLink to="/" class="hover:underline">首页</NuxtLink>
+            <NuxtLink to="/" class="hover:underline">{{ t('learnGame.home') }}</NuxtLink>
           </li>
           <li>
-            <NuxtLink to="/learn-game" class="hover:underline">边玩边学</NuxtLink>
+            <NuxtLink to="/learn-game" class="hover:underline">{{ t('learnGame.learnWhilePlaying') }}</NuxtLink>
           </li>
           <li v-for="(b, i) in breadcrumbs" :key="i" class="flex items-center">
             <span class="mx-2">/</span>
@@ -19,7 +19,7 @@
 
       <header class="mb-6">
         <h1 class="text-2xl font-semibold text-slate-800">{{ viewTitle }}</h1>
-        <p class="text-sm text-slate-500 mt-1">选择一个分类或书籍开始阅读</p>
+        <p class="text-sm text-slate-500 mt-1">{{ t('learnGame.selectCategory') }}</p>
       </header>
 
       <!-- Top level: Show each category as a section -->
@@ -88,8 +88,8 @@
       </section>
 
       <!-- Fallback / info -->
-      <div v-if="loading" class="mt-6 text-sm text-slate-500">加载中…</div>
-      <div v-if="error" class="mt-6 text-sm text-red-600">加载失败：{{ error }}</div>
+      <div v-if="loading" class="mt-6 text-sm text-slate-500">{{ t('learnGame.loading') }}</div>
+      <div v-if="error" class="mt-6 text-sm text-red-600">{{ t('learnGame.loadFailed') }}：{{ error }}</div>
     </div>
   </div>
 </template>
@@ -102,6 +102,7 @@ import { useLearnAllStore } from '~/stores/useLearnAllStore'
 // Local state
 const store = useLearnAllStore()
 const route = useRoute()
+const { t } = useI18n()
 const loading = ref(false)
 const error = ref<string | null>(null)
 
@@ -124,7 +125,7 @@ async function refreshFromQuery() {
     const catPath = queryCategory.value
     if (!catPath) {
       // top-level view
-      viewTitle.value = '全部分类'
+      viewTitle.value = t('learnGame.allCategories')
       breadcrumbs.value = []
       // Build sections for each top-level category
       topCategories.value = store.categories.map(cat => {
@@ -160,7 +161,7 @@ async function refreshFromQuery() {
         bc.push({ title: b.title || b.node?.title || '—', href })
       }
       breadcrumbs.value = bc
-      viewTitle.value = res.breadcrumbs.length ? res.breadcrumbs[res.breadcrumbs.length - 1]?.title || '' : '分类'
+      viewTitle.value = res.breadcrumbs.length ? res.breadcrumbs[res.breadcrumbs.length - 1]?.title || '' : t('learnGame.categories')
       const children = store.getChildrenForNode(res.node)
       buildDisplay(children, res)
     }

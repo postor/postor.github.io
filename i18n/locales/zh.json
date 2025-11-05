@@ -1,0 +1,24 @@
+{
+  "nav": {
+    "home": "首页",
+    "recent": "最近",
+    "files": "文件",
+    "read": "阅读"
+  },
+  "bookReading": {
+    "recentBooks": "最近阅读",
+    "noRecentBooks": "暂无最近阅读的书籍。",
+    "progress": "进度",
+    "markAsRead": "标记为已读",
+    "noBookSelected": "未选择书籍。请从最近阅读或文件中选择一本书。"
+  },
+  "learnGame": {
+    "home": "首页",
+    "learnWhilePlaying": "边玩边学",
+    "selectCategory": "选择一个分类或书籍开始阅读",
+    "allCategories": "全部分类",
+    "loading": "加载中…",
+    "loadFailed": "加载失败",
+    "categories": "分类"
+  }
+}
