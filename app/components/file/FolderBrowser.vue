@@ -1,99 +1,92 @@
 <template>
-  <div class="w-full max-w-4xl mx-auto">
-  <FileNavBar :disabled="store.loading || !store.opfsAvailable" @create-folder="onCreateFolder" @upload="store.uploadFile" />
+  <div class="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
 
-    <div class="p-4">
-      <div class="flex items-center justify-between gap-4">
+    <div class="flex items-center justify-between gap-4 flex-nowrap">
+      <div class="min-w-0 flex-1 overflow-hidden">
         <FileBreadcrumbs :path="store.currentPath" @go="store.goTo" />
-
-        <div class="relative">
-          <button :disabled="selectedCount === 0" @click="store.bulkOpen = !store.bulkOpen" class="px-2 py-1 rounded bg-slate-100 disabled:opacity-50">Actions</button>
-          <div v-if="store.bulkOpen" class="absolute right-0 mt-2 w-44 bg-white border rounded shadow p-2 z-50">
-            <button class="w-full text-left px-2 py-1 hover:bg-slate-50" @click="onBulkMove">Move</button>
-            <button class="w-full text-left px-2 py-1 text-red-600 hover:bg-slate-50" @click="onBulkDelete">Delete</button>
-          </div>
-        </div>
       </div>
 
-      <div v-if="store.loading" class="py-8 text-center text-sm text-slate-600">Loading…</div>
-
-      <div v-else-if="!store.opfsAvailable" class="py-8 text-center">
-        <div class="text-lg font-medium mb-2">Storage not available</div>
-        <div class="text-sm text-slate-600 mb-4">This browser does not expose the private origin filesystem. Use a Chromium-based browser that supports Storage Foundation / OPFS.</div>
-        <div class="flex justify-center gap-2">
-          <button class="px-3 py-1 bg-blue-600 text-white rounded text-sm" disabled>Create local folder</button>
-        </div>
-      </div>
-
-      <div v-else>
-        <div v-if="store.error" class="mb-4 text-sm text-red-600">Error: {{ store.error }}</div>
-
-        <div v-if="!store.loading && store.items.length === 0" class="py-8 text-center text-slate-600">
-          <div class="text-lg font-medium mb-2">No books yet</div>
-          <div class="text-sm mb-4">Upload files or create a folder to get started.</div>
-          <div class="flex justify-center gap-2">
-            <button @click="onCreateFolder()" class="px-3 py-1 bg-blue-600 text-white rounded text-sm">New folder</button>
-            <label class="px-3 py-1 bg-green-600 text-white rounded text-sm cursor-pointer">
-              Upload
-              <input type="file" class="hidden" @change="onFile" />
-            </label>
-          </div>
-        </div>
-
-      <FileList
-          v-else
-          :items="store.items"
-          @open="store.openItem"
-          @toggle-select="store.toggleSelect"
-          @rename="onRename"
-          @cancel-rename="onCancelRename"
-          @create-folder="onCreateFolder"
-          @upload="(file:File) => store.uploadFile(file)"
-          @rename-request="store.openRenameModalForItem"
-          @move-request="store.openMoveModalForItem"
-          @delete-request="store.openDeleteModalForItem"
+      <div class="flex items-center gap-2 shrink-0">
+        <BulkActions
+          :sort-key="sortKey"
+          :sort-asc="sortAsc"
+          :selected-count="selectedCount"
+          @toggle-sort-name="toggleSortName"
+          @toggle-sort-time="toggleSortTime"
+          @bulk-move="onBulkMove"
+          @bulk-delete="onBulkDelete"
         />
-      <!-- Move modal -->
-      <div v-if="store.showMoveModal" class="fixed inset-0 flex items-center justify-center z-50">
-        <div class="absolute inset-0 bg-black/40" @click="store.cancelMove()"></div>
-        <div class="bg-white rounded shadow p-4 z-10 w-full max-w-md">
-          <div class="text-lg font-medium mb-2">Move item(s)</div>
-          <div class="text-sm mb-2">Target folder (full path):</div>
-          <input v-model="store.moveTarget" class="w-full border rounded px-2 py-1 mb-3" />
-          <div class="flex justify-end gap-2">
-            <button class="px-3 py-1" @click="store.cancelMove()">Cancel</button>
-            <button class="px-3 py-1 bg-blue-600 text-white rounded" @click="store.confirmMove()">Move</button>
-          </div>
+      </div>
+    </div>
+
+    <!-- loading state -->
+    <div v-if="store.loading" class="py-10 text-center text-sm text-slate-600">
+      <div class="mx-auto h-6 w-6 animate-spin rounded-full border-2 border-slate-300 border-t-slate-500" />
+      <div class="mt-3">Loading…</div>
+    </div>
+
+    <!-- OPFS not available -->
+    <div v-else-if="!store.opfsAvailable" class="py-10 text-center">
+      <div class="text-lg font-semibold mb-2">Storage not available</div>
+      <div class="text-sm text-slate-600 mb-4 max-w-prose mx-auto">This browser does not expose the private origin filesystem. Use a Chromium-based browser that supports Storage Foundation / OPFS.</div>
+      <div class="flex justify-center gap-2">
+        <button class="px-3 py-1.5 bg-slate-200 text-slate-500 rounded-md text-sm cursor-not-allowed" disabled>Create local folder</button>
+      </div>
+    </div>
+
+    <!-- main content -->
+    <div v-else>
+      <div v-if="store.error" class="mb-4 text-sm text-red-600">Error: {{ store.error }}</div>
+
+      <!-- empty state -->
+      <div v-if="!store.loading && store.items.length === 0" class="py-12 text-center text-slate-600">
+        <div class="mx-auto mb-4 h-14 w-14 rounded-full bg-slate-100 flex items-center justify-center text-2xl">📚</div>
+        <div class="text-lg font-semibold mb-1">No books yet</div>
+        <div class="text-sm mb-6">Upload files or create a folder to get started.</div>
+        <div class="flex justify-center gap-2">
+          <button @click="onCreateFolder()" class="inline-flex items-center gap-2 rounded-md bg-blue-600 px-3 py-1.5 text-sm font-medium text-white shadow hover:bg-blue-700">
+            <span>New folder</span>
+          </button>
+          <label class="inline-flex items-center gap-2 rounded-md bg-green-600 px-3 py-1.5 text-sm font-medium text-white shadow hover:bg-green-700 cursor-pointer">
+            <span>Upload</span>
+            <input type="file" class="hidden" @change="onFile" />
+          </label>
         </div>
       </div>
 
-      <!-- Rename modal -->
-      <div v-if="store.showRenameModal" class="fixed inset-0 flex items-center justify-center z-50">
-        <div class="absolute inset-0 bg-black/40" @click="store.cancelRenameModal()"></div>
-        <div class="bg-white rounded shadow p-4 z-10 w-full max-w-md">
-          <div class="text-lg font-medium mb-2">Rename</div>
+      <!-- list -->
+      <FileList v-else :items="sortedItems" @open="store.openItem" @toggle-select="store.toggleSelect" @rename="onRename" @cancel-rename="onCancelRename" @create-folder="onCreateFolder"
+        @upload="(file: File) => store.uploadFile(file)" @rename-request="store.openRenameModalForItem" @move-request="store.openMoveModalForItem" @delete-request="store.openDeleteModalForItem" />
+
+      <!-- Move modal (extracted to component) -->
+      <MoveModal v-if="store.showMoveModal" />
+
+      <!-- Rename modal using Nuxt UI -->
+      <UModal v-model:open="store.showRenameModal" title="Rename" @close="store.cancelRenameModal()">
+        <template #body>
           <div class="text-sm mb-2">New name:</div>
           <input v-model="store.renameName" class="w-full border rounded px-2 py-1 mb-3" />
+        </template>
+        <template #footer="{ close }">
           <div class="flex justify-end gap-2">
-            <button class="px-3 py-1" @click="store.cancelRenameModal()">Cancel</button>
-            <button class="px-3 py-1 bg-blue-600 text-white rounded" @click="store.confirmRenameModal()">Rename</button>
+            <UButton color="neutral" variant="ghost" @click="() => { close(); store.cancelRenameModal(); }">Cancel</UButton>
+            <UButton color="primary" @click="store.confirmRenameModal">Rename</UButton>
           </div>
-        </div>
-      </div>
+        </template>
+      </UModal>
 
-      <!-- Delete modal -->
-      <div v-if="store.showDeleteModal" class="fixed inset-0 flex items-center justify-center z-50">
-        <div class="absolute inset-0 bg-black/40" @click="store.cancelDeleteModal()"></div>
-        <div class="bg-white rounded shadow p-4 z-10 w-full max-w-md">
-          <div class="text-lg font-medium mb-2">Confirm delete</div>
+      <!-- Delete modal using Nuxt UI -->
+      <UModal v-model:open="store.showDeleteModal" title="Confirm delete" @close="store.cancelDeleteModal()">
+        <template #body>
           <div class="text-sm mb-4">Are you sure you want to delete {{ store.deleteIds.length }} item(s)? This cannot be undone.</div>
+        </template>
+        <template #footer="{ close }">
           <div class="flex justify-end gap-2">
-            <button class="px-3 py-1" @click="store.cancelDeleteModal()">Cancel</button>
-            <button class="px-3 py-1 bg-red-600 text-white rounded" @click="store.confirmDeleteModal()">Delete</button>
+            <UButton color="neutral" variant="ghost" @click="() => { close(); store.cancelDeleteModal(); }">Cancel</UButton>
+            <UButton color="error" @click="store.confirmDeleteModal">Delete</UButton>
           </div>
-        </div>
-      </div>
-      </div>
+        </template>
+      </UModal>
     </div>
   </div>
 </template>
@@ -102,11 +95,56 @@ import { useFileBrowserStore } from '../../stores/useFileBrowserStore'
 import FileNavBar from './NavBar.vue'
 import FileBreadcrumbs from './Breadcrumbs.vue'
 import FileList from './FileList.vue'
+import MoveModal from './MoveModal.vue'
+import BulkActions from './BulkActions.vue'
 
 import { ref, computed, onMounted } from 'vue'
+import { UModal, UButton } from '#components'
 
 const store = useFileBrowserStore()
 const selectedCount = computed(() => store.items.filter((i: any) => i.selected).length)
+
+// sort state and derived list
+const sortKey = ref<'name' | 'time'>('name')
+const sortAsc = ref(true)
+const sortedItems = computed(() => {
+  const list = [...store.items]
+  list.sort((a: any, b: any) => {
+    if (sortKey.value === 'time') {
+      const at = typeof a.uploadedAt === 'number' ? a.uploadedAt : 0
+      const bt = typeof b.uploadedAt === 'number' ? b.uploadedAt : 0
+      if (at < bt) return sortAsc.value ? -1 : 1
+      if (at > bt) return sortAsc.value ? 1 : -1
+      // tie-breaker by name
+    }
+    const an = (a.name || '').toLowerCase()
+    const bn = (b.name || '').toLowerCase()
+    if (an < bn) return sortAsc.value ? -1 : 1
+    if (an > bn) return sortAsc.value ? 1 : -1
+    return 0
+  })
+  return list
+})
+
+function toggleSortName() {
+  if (sortKey.value === 'name') {
+    sortAsc.value = !sortAsc.value
+  } else {
+    sortKey.value = 'name'
+    sortAsc.value = true // default A→Z
+  }
+  store.bulkOpen = false
+}
+
+function toggleSortTime() {
+  if (sortKey.value === 'time') {
+    sortAsc.value = !sortAsc.value
+  } else {
+    sortKey.value = 'time'
+    sortAsc.value = false // default Newest→Oldest
+  }
+  store.bulkOpen = false
+}
 
 onMounted(() => {
   // initialize store (detect OPFS and sync)

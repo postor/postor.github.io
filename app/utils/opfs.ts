@@ -53,18 +53,28 @@ async function getHandleForPath(path: string, create = false): Promise<DirHandle
   return dir
 }
 
-export async function list(path = ''): Promise<Array<{ name: string; type: 'file' | 'folder'; size?: number }>> {
+export async function list(path = ''): Promise<Array<{ name: string; type: 'file' | 'folder'; size?: number; mtime?: number }>> {
   const dir = await getHandleForPath(path)
   if (!dir) return []
-  const out: Array<{ name: string; type: 'file' | 'folder'; size?: number }> = []
+  const out: Array<{ name: string; type: 'file' | 'folder'; size?: number; mtime?: number }> = []
   try {
     // entries() is an async iterable of [name, handle]
     for await (const entry of dir.entries ? dir.entries() : []) {
       // entry may be [name, handle] or {name, kind}
       if (Array.isArray(entry)) {
-        const [name, handle] = entry
-        const kind = handle.kind || (handle.isFile ? 'file' : 'directory')
-        out.push({ name, type: kind === 'file' ? 'file' : 'folder' })
+        const [name, handle] = entry as [string, any]
+        const kind = handle.kind || (handle.isFile ? 'file' : handle.isDirectory ? 'directory' : undefined)
+        if (kind === 'file' || typeof handle.getFile === 'function') {
+          try {
+            const file: File = await handle.getFile()
+            out.push({ name, type: 'file', size: Number(file.size) || undefined, mtime: Number(file.lastModified) || undefined })
+          } catch (_e) {
+            // fallback if getFile fails
+            out.push({ name, type: 'file' })
+          }
+        } else {
+          out.push({ name, type: 'folder' })
+        }
       } else if (entry && typeof entry === 'object') {
         const { name, kind } = entry as any
         out.push({ name, type: kind === 'file' ? 'file' : 'folder' })

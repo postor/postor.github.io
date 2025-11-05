@@ -6,6 +6,8 @@ export interface FileEntry {
   type: 'file' | 'folder'
   ext?: string
   size?: number
+  // uploadedAt derived from OPFS file lastModified when available
+  uploadedAt?: number
   selected?: boolean
 }
 import * as opfs from '../utils/opfs'
@@ -64,7 +66,7 @@ export const useFileBrowserStore = defineStore('fileBrowser', {
         const list = await opfs.list(path)
         this.items = list
           .filter((i) => !i.name.startsWith(HIDDEN_PREFIX) && !i.name.startsWith('.'))
-          .map((i) => ({ id: makeId(), name: i.name, type: i.type, size: i.size }))
+          .map((i) => ({ id: makeId(), name: i.name, type: i.type, size: i.size, uploadedAt: (i as any).mtime }))
       } catch (e: any) {
         this.error = e?.message || String(e)
         this.items = []
