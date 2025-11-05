@@ -1,7 +1,12 @@
 <template>
   <div>
     <nav>
-      <NuxtLink to="/">Home</NuxtLink> 
+      <div class="nav-left">
+        <NuxtLink to="/">Home</NuxtLink>
+      </div>
+      <div class="nav-right">
+        <I18nSelect />
+      </div>
     </nav>
     <slot />
   </div>
@@ -10,7 +15,19 @@
 <style>
 nav {
   padding: 1rem;
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.nav-left {
+  display: flex;
+  align-items: center;
+}
+
+.nav-right {
+  display: flex;
+  align-items: center;
 }
 
 nav a {
@@ -22,5 +39,17 @@ nav a {
 nav a.router-link-active {
   color: #35495e;
   font-weight: bold;
+}
+
+/* small screens: move items to stack */
+@media (max-width: 480px) {
+  nav {
+    flex-direction: column;
+    gap: 0.5rem;
+    text-align: center;
+  }
+  .nav-right {
+    justify-content: center;
+  }
 }
 </style>

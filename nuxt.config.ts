@@ -4,7 +4,7 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
   ssr: true,
   // Add Pinia and Tailwind css modules (install packages before use)
-  modules: ['@pinia/nuxt', '@nuxt/ui', '@vite-pwa/nuxt'],
+  modules: ['@pinia/nuxt', '@nuxt/ui', '@vite-pwa/nuxt', '@nuxtjs/i18n'],
   app: {
     head: {
       title: 'Nuxt Game App',
@@ -17,7 +17,7 @@ export default defineNuxtConfig({
   ui: {
     fonts: false,
   },
-  alias:{
+  alias: {
     '@mintplex-labs/piper-tts-web': '~/resolve/piper-tts-web/piper-tts-web.js'
   },
   css: [
@@ -25,4 +25,13 @@ export default defineNuxtConfig({
     // You can also include other CSS files or libraries here,
     // for example: 'bulma', or '~/assets/css/another.scss'
   ],
+  i18n: {
+    locales: [{
+      code: 'zh',
+      name: '中文'
+    }, {
+      code: 'en',
+      name: 'English'
+    }]
+  }
 })

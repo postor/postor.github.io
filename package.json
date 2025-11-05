@@ -13,6 +13,7 @@
     "@diffusionstudio/piper-wasm": "^1.0.0",
     "@mintplex-labs/piper-tts-web": "^1.0.4",
     "@nuxt/ui": "^4.1.0",
+    "@nuxtjs/i18n": "^10.2.0",
     "@pinia/nuxt": "^0.11.2",
     "@vite-pwa/nuxt": "1.0.7",
     "jotai": "^2.15.0",
