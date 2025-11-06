@@ -1,20 +1,37 @@
 <template>
-  <div class="read-text-container" :class="{ 'dark-mode': isDarkMode }">
-    <div class="controls-bar">
-      <div class="controls-left">
-        <button @click="prevPage" :disabled="currentPage <= 0" class="nav-btn">
+  <div
+    class="min-h-screen bg-white text-neutral-900 transition-colors dark:bg-neutral-900 dark:text-neutral-200"
+    :class="{ dark: isDarkMode }"
+  >
+    <div
+      class="flex flex-col items-stretch gap-4 p-4 border-b bg-neutral-50 dark:bg-neutral-800 dark:border-neutral-700 sm:flex-row sm:items-center sm:justify-between"
+    >
+      <div class="flex items-center gap-3 flex-wrap justify-center sm:justify-start">
+        <button
+          @click="prevPage"
+          :disabled="currentPage <= 0"
+          class="px-3 py-2 border rounded text-sm transition bg-white border-neutral-300 hover:bg-neutral-100 hover:border-neutral-400 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-neutral-800 dark:border-neutral-600 dark:text-neutral-200 dark:hover:bg-neutral-700 dark:hover:border-neutral-500"
+        >
           ← {{ t('bookReading.prev') }}
         </button>
-        <span class="page-info">{{ currentPage + 1 }} / {{ totalPages }}</span>
-        <button @click="nextPage" :disabled="currentPage >= totalPages - 1" class="nav-btn">
+  <span class="font-medium min-w-20 text-center">{{ currentPage + 1 }} / {{ totalPages }}</span>
+        <button
+          @click="nextPage"
+          :disabled="currentPage >= totalPages - 1"
+          class="px-3 py-2 border rounded text-sm transition bg-white border-neutral-300 hover:bg-neutral-100 hover:border-neutral-400 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-neutral-800 dark:border-neutral-600 dark:text-neutral-200 dark:hover:bg-neutral-700 dark:hover:border-neutral-500"
+        >
           {{ t('bookReading.next') }} →
         </button>
       </div>
-      
-      <div class="controls-right">
-        <label class="control-item">
+
+  <div class="flex items-center gap-3 flex-wrap justify-center sm:justify-start">
+        <label class="flex items-center gap-2 text-sm">
           <span>{{ t('bookReading.encoding') || 'Encoding' }}:</span>
-          <select v-model="selectedEncoding" @change="onEncodingChange" class="encoding-select">
+          <select
+            v-model="selectedEncoding"
+            @change="onEncodingChange"
+            class="px-2 py-1 border rounded bg-white border-neutral-300 dark:bg-neutral-800 dark:border-neutral-600 dark:text-neutral-200"
+          >
             <option value="auto">Auto Detect</option>
             <option value="utf-8">UTF-8</option>
             <option value="gbk">GBK</option>
@@ -26,14 +43,21 @@
             <option value="windows-1252">Windows-1252</option>
             <option value="iso-8859-1">ISO-8859-1</option>
           </select>
-          <span v-if="detectedEncoding" class="detected-info" :title="`Detected: ${detectedEncoding}`">
+          <span
+            v-if="detectedEncoding"
+            class="text-xs text-neutral-500 italic dark:text-neutral-400"
+            :title="`Detected: ${detectedEncoding}`"
+          >
             ({{ detectedEncoding }})
           </span>
         </label>
-        
-        <label class="control-item">
+
+        <label class="flex items-center gap-2 text-sm">
           <span>{{ t('bookReading.fontSize') }}:</span>
-          <select v-model="fontSize" class="font-select">
+          <select
+            v-model="fontSize"
+            class="px-2 py-1 border rounded bg-white border-neutral-300 dark:bg-neutral-800 dark:border-neutral-600 dark:text-neutral-200"
+          >
             <option value="14">14px</option>
             <option value="16">16px</option>
             <option value="18">18px</option>
@@ -43,22 +67,29 @@
             <option value="32">32px</option>
           </select>
         </label>
-        
-        <button @click="toggleTheme" class="theme-btn">
+
+        <button
+          @click="toggleTheme"
+          class="px-3 py-2 border rounded text-sm transition bg-white border-neutral-300 hover:bg-neutral-100 hover:border-neutral-400 dark:bg-neutral-800 dark:border-neutral-600 dark:text-neutral-200 dark:hover:bg-neutral-700 dark:hover:border-neutral-500"
+        >
           {{ isDarkMode ? '☀️' : '🌙' }}
         </button>
-        
-        <button @click="toggleAudio" class="audio-btn" :disabled="isLoadingAudio">
+
+        <button
+          @click="toggleAudio"
+          :disabled="isLoadingAudio"
+          class="px-3 py-2 border rounded text-sm transition bg-white border-neutral-300 hover:bg-neutral-100 hover:border-neutral-400 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-neutral-800 dark:border-neutral-600 dark:text-neutral-200 dark:hover:bg-neutral-700 dark:hover:border-neutral-500"
+        >
           {{ isPlaying ? '⏸️' : '▶️' }}
         </button>
       </div>
     </div>
 
-    <div class="text-content" :style="{ fontSize: fontSize + 'px' }">
-      <div v-if="loading" class="loading-msg">{{ t('bookReading.loading') }}...</div>
-      <div v-else-if="error" class="error-msg">{{ error }}</div>
-      <div v-else-if="currentPageContent" class="page-text" v-html="currentPageContent"></div>
-      <div v-else class="empty-msg">{{ t('bookReading.noContent') }}</div>
+    <div class="max-w-[800px] mx-auto p-8 leading-8 sm:p-4" :style="{ fontSize: fontSize + 'px' }">
+      <div v-if="loading" class="text-center p-8 text-base">{{ t('bookReading.loading') }}...</div>
+      <div v-else-if="error" class="text-center p-8 text-base text-red-600 dark:text-red-400">{{ error }}</div>
+      <div v-else-if="currentPageContent" class="space-y-2" v-html="currentPageContent"></div>
+      <div v-else class="text-center p-8 text-base">{{ t('bookReading.noContent') }}</div>
     </div>
 
     <audio ref="audioPlayer" @ended="onAudioEnded" @play="isPlaying = true" @pause="isPlaying = false" style="display: none;"></audio>
@@ -403,155 +434,3 @@ watch(() => props.filePath, () => {
   loadFile()
 })
 </script>
-
-<style scoped>
-.read-text-container {
-  min-height: 100vh;
-  background: #ffffff;
-  color: #1a1a1a;
-  transition: background 0.3s, color 0.3s;
-}
-
-.read-text-container.dark-mode {
-  background: #1a1a1a;
-  color: #e0e0e0;
-}
-
-.controls-bar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem;
-  border-bottom: 1px solid #e0e0e0;
-  background: #f8f8f8;
-  flex-wrap: wrap;
-  gap: 1rem;
-}
-
-.dark-mode .controls-bar {
-  background: #2a2a2a;
-  border-bottom-color: #404040;
-}
-
-.controls-left, .controls-right {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  flex-wrap: wrap;
-}
-
-.nav-btn, .theme-btn, .audio-btn {
-  padding: 0.5rem 1rem;
-  border: 1px solid #ccc;
-  background: white;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
-  transition: all 0.2s;
-}
-
-.dark-mode .nav-btn,
-.dark-mode .theme-btn,
-.dark-mode .audio-btn {
-  background: #333;
-  border-color: #555;
-  color: #e0e0e0;
-}
-
-.nav-btn:hover:not(:disabled),
-.theme-btn:hover,
-.audio-btn:hover:not(:disabled) {
-  background: #f0f0f0;
-  border-color: #999;
-}
-
-.dark-mode .nav-btn:hover:not(:disabled),
-.dark-mode .theme-btn:hover,
-.dark-mode .audio-btn:hover:not(:disabled) {
-  background: #444;
-  border-color: #666;
-}
-
-.nav-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.page-info {
-  font-weight: 500;
-  min-width: 80px;
-  text-align: center;
-}
-
-.control-item {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 14px;
-}
-
-.font-select,
-.encoding-select {
-  padding: 0.4rem;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  background: white;
-}
-
-.dark-mode .font-select,
-.dark-mode .encoding-select {
-  background: #333;
-  border-color: #555;
-  color: #e0e0e0;
-}
-
-.detected-info {
-  font-size: 12px;
-  color: #666;
-  font-style: italic;
-}
-
-.dark-mode .detected-info {
-  color: #999;
-}
-
-.text-content {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 2rem;
-  line-height: 1.8;
-}
-
-.page-text :deep(p) {
-  margin: 0.5rem 0;
-}
-
-.loading-msg, .error-msg, .empty-msg {
-  text-align: center;
-  padding: 2rem;
-  font-size: 16px;
-}
-
-.error-msg {
-  color: #d32f2f;
-}
-
-.dark-mode .error-msg {
-  color: #ff6b6b;
-}
-
-@media (max-width: 640px) {
-  .controls-bar {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  
-  .controls-left, .controls-right {
-    justify-content: center;
-  }
-  
-  .text-content {
-    padding: 1rem;
-  }
-}
-</style>
