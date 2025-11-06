@@ -1,7 +1,7 @@
 <template>
   <div
     class="min-h-full bg-white text-neutral-900 transition-colors dark:bg-neutral-900 dark:text-neutral-200"
-    :class="{ dark: isDarkMode }"
+    :class="themeClass"
   >
     <!-- Sticky Controls at Top, Expand/Collapse at Bottom of Controls -->
     <div class="sticky top-0 z-20">
@@ -70,7 +70,7 @@
               @click="toggleTheme"
               class="px-3 py-2 border rounded text-sm transition bg-white border-neutral-300 hover:bg-neutral-100 hover:border-neutral-400 dark:bg-neutral-800 dark:border-neutral-600 dark:text-neutral-200 dark:hover:bg-neutral-700 dark:hover:border-neutral-500"
             >
-              {{ isDarkMode ? '☀️' : '🌙' }}
+              {{ themeStore.isDark ? '☀️' : '🌙' }}
             </button>
             <button
               @click="toggleAudio"
@@ -122,7 +122,9 @@ const error = ref('')
 const textContent = ref('')
 const currentPage = ref(0)
 const fontSize = ref(18)
-const isDarkMode = ref(false)
+import { useThemeStore } from '~/stores/useThemeStore'
+const themeStore = useThemeStore()
+const themeClass = themeStore.themeClass
 const isPlaying = ref(false)
 const isLoadingAudio = ref(false)
 const audioPlayer = ref<HTMLAudioElement | null>(null)
@@ -176,8 +178,7 @@ function prevPage() {
 
 // Theme
 function toggleTheme() {
-  isDarkMode.value = !isDarkMode.value
-  savePreferences()
+  themeStore.setTheme(themeStore.isDark ? 'light' : 'dark')
 }
 
 // Controls toggle
@@ -267,7 +268,6 @@ function loadReadingPosition() {
 function savePreferences() {
   if (typeof localStorage !== 'undefined') {
     localStorage.setItem('read-text-fontSize', String(fontSize.value))
-    localStorage.setItem('read-text-darkMode', String(isDarkMode.value))
     localStorage.setItem('read-text-controlsExpanded', String(controlsExpanded.value))
     localStorage.setItem('read-text-autoMode', String(isAutoMode.value))
   }
@@ -276,12 +276,9 @@ function savePreferences() {
 function loadPreferences() {
   if (typeof localStorage !== 'undefined') {
     const savedFontSize = localStorage.getItem('read-text-fontSize')
-    const savedDarkMode = localStorage.getItem('read-text-darkMode')
     const savedControlsExpanded = localStorage.getItem('read-text-controlsExpanded')
     const savedAutoMode = localStorage.getItem('read-text-autoMode')
-    
     if (savedFontSize) fontSize.value = parseInt(savedFontSize, 10)
-    if (savedDarkMode) isDarkMode.value = savedDarkMode === 'true'
     if (savedControlsExpanded !== null) controlsExpanded.value = savedControlsExpanded === 'true'
     if (savedAutoMode !== null) isAutoMode.value = savedAutoMode === 'true'
   }
