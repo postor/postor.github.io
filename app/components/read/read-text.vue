@@ -66,6 +66,13 @@
                 <option value="32">32px</option>
               </select>
             </label>
+            <label class="flex items-center gap-2 text-sm">
+              <span>TTS:</span>
+              <select v-model="ttsEngine" class="px-2 py-1 border rounded bg-white border-neutral-300 dark:bg-neutral-800 dark:border-neutral-600 dark:text-neutral-200">
+                <option value="piper">Piper</option>
+                <option value="kokoro">KokoroJS</option>
+              </select>
+            </label>
             <button
               @click="toggleTheme"
               class="px-3 py-2 border rounded text-sm transition bg-white border-neutral-300 hover:bg-neutral-100 hover:border-neutral-400 dark:bg-neutral-800 dark:border-neutral-600 dark:text-neutral-200 dark:hover:bg-neutral-700 dark:hover:border-neutral-500"
@@ -105,7 +112,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
-import * as tts from '@mintplex-labs/piper-tts-web'
+import { getVoices, predict as ttsPredict } from '~/utils/tts'
 import * as iconv from 'iconv-lite'
 import jschardet from 'jschardet'
 import { useThemeStore } from '~/stores/useThemeStore'
@@ -164,14 +171,22 @@ const detectedEncoding = computed({
   set: (val) => textReaderStore.setEncodingSettings(props.filePath, { detectedEncoding: val })
 })
 
+
 const isPlaying = computed({
   get: () => textReaderStore.audioState.isPlaying,
   set: (val) => textReaderStore.setAudioPlaying(val)
 })
-
 const isLoadingAudio = computed({
   get: () => textReaderStore.audioState.isLoadingAudio,
   set: (val) => textReaderStore.setAudioLoading(val)
+})
+
+// TTS Engine selection
+import { getDefaultEngine, setDefaultEngine } from '~/utils/tts'
+import type { TTSEngine } from '~/utils/tts'
+const ttsEngine = ref<TTSEngine>(getDefaultEngine())
+watch(ttsEngine, (val) => {
+  setDefaultEngine(val)
 })
 
 // Parse content into pages
@@ -313,20 +328,24 @@ async function playCurrentSentence() {
     textReaderStore.setAudioLoading(true)
     
     // Initialize voices if needed
-    const voices = await tts.voices()
-    
+    const voices = await getVoices(ttsEngine.value)
     // Use Chinese voice if available, fallback to first available
-    let voiceId = 'zh_CN-huayan-medium'
-    const hasChineseVoice = voices.some((v: any) => v.key === voiceId)
-    if (!hasChineseVoice && voices.length > 0 && voices[0]) {
+    let voiceId = ''
+    if (ttsEngine.value === 'piper') {
+      voiceId = 'zh_CN-huayan-medium'
+    } else if (ttsEngine.value === 'kokoro') {
+      // 默认用af_heart，若不存在则用第一个
+      voiceId = 'af_heart'
+    }
+    const hasVoice = voices.some((v) => v.key === voiceId)
+    if (!hasVoice && voices.length > 0 && voices[0]) {
       voiceId = voices[0].key
     }
-
-    const wav = await tts.predict({
+    const wav = await ttsPredict({
       text: sentenceText.trim(),
       voiceId: voiceId,
+      engine: ttsEngine.value,
     })
-
     const url = URL.createObjectURL(wav)
     audioPlayer.value.src = url
     await audioPlayer.value.play()
