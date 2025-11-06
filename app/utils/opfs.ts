@@ -103,11 +103,7 @@ export async function readFile(path: string): Promise<ArrayBuffer | string | nul
     const fh = await dir.getFileHandle(fileName)
     const file = await fh.getFile()
     // return text by default
-    try {
-      return await file.text()
-    } catch (_e) {
-      return await file.arrayBuffer()
-    }
+    return await file.arrayBuffer()
   } catch (e) {
     return null
   }

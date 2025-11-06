@@ -10,7 +10,13 @@
     "noRecentBooks": "No recent books.",
     "progress": "Progress",
     "markAsRead": "Mark as Read",
-    "noBookSelected": "No book selected. Please select a book from Recent or Files."
+    "noBookSelected": "No book selected. Please select a book from Recent or Files.",
+    "prev": "Prev",
+    "next": "Next",
+    "fontSize": "Font Size",
+    "encoding": "Encoding",
+    "loading": "Loading",
+    "noContent": "No content to display"
   },
   "learnGame": {
     "home": "Home",

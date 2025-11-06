@@ -1,10 +1,6 @@
 <template>
-  <div
-    class="flex items-center gap-3 p-2 rounded hover:bg-slate-50 cursor-pointer"
-    @click="onClick"
-    @contextmenu.prevent="toggleSelect"
-  >
-  <input type="checkbox" class="w-4 h-4" v-model="local.selected" @change="toggleSelect" @click.stop />
+  <div class="flex items-center gap-3 p-2 rounded hover:bg-slate-50 cursor-pointer" @click="onClick" @contextmenu.prevent="toggleSelect">
+    <input type="checkbox" class="w-4 h-4" v-model="local.selected" @change="toggleSelect" @click.stop />
 
     <div class="w-10 h-10 flex items-center justify-center bg-slate-100 rounded">
       <span class="text-sm">{{ icon }}</span>
@@ -35,13 +31,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, onMounted, onUnmounted } from 'vue'
 import type { FileEntry } from '../../stores/useFileBrowserStore'
 import { defineProps } from 'vue'
 import { useFileBrowserStore } from '../../stores/useFileBrowserStore'
+import { useRouter } from 'vue-router'
 
 const props = defineProps<{ item: FileEntry }>()
 const store = useFileBrowserStore()
+const router = useRouter()
 
 const local = ref({ selected: !!props.item.selected })
 const isEditing = ref<boolean>((props.item as any).editing === true || (props.item as any).isNew === true)
@@ -52,6 +50,20 @@ const showMenu = ref(false)
 function toggleMenu() {
   showMenu.value = !showMenu.value
 }
+
+function handleClickOutside(event: MouseEvent) {
+  if (showMenu.value) {
+    showMenu.value = false
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside)
+})
 
 function onRenameRequest() {
   // start rename flow via store
@@ -114,6 +126,14 @@ function onClick(e: Event) {
     toggleSelect()
     return
   }
+
+  // If it's a .txt file, navigate to the reading page
+  if (props.item.type === 'file' && props.item.name.endsWith('.txt')) {
+    const fullPath = `${store.currentPath}/${props.item.name}`
+    router.push(`/book-reading/reading?file=${encodeURIComponent(fullPath)}`)
+    return
+  }
+
   store.openItem(props.item)
 }
 

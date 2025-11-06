@@ -1,6 +1,6 @@
 
 <template>
-  <div>
+  <div class="p-4">
     <h2 class="text-xl font-bold mb-4">{{ t('bookReading.recentBooks') }}</h2>
     <ul v-if="recentBooks.length">
       <li v-for="book in recentBooks" :key="book.id" class="mb-2 flex items-center justify-between">
