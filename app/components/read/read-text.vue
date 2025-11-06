@@ -104,10 +104,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import * as tts from '@mintplex-labs/piper-tts-web'
 import * as iconv from 'iconv-lite'
 import jschardet from 'jschardet'
+import { useThemeStore } from '~/stores/useThemeStore'
+import { useTextReaderStore } from '~/stores/useTextReaderStore'
 
 const props = defineProps<{
   filePath: string
@@ -115,26 +117,62 @@ const props = defineProps<{
 
 const { t } = useI18n()
 const bookReadingStore = useBookReadingStore()
+const themeStore = useThemeStore()
+const textReaderStore = useTextReaderStore()
 
 // State
 const loading = ref(true)
 const error = ref('')
 const textContent = ref('')
 const currentPage = ref(0)
-const fontSize = ref(18)
-import { useThemeStore } from '~/stores/useThemeStore'
-const themeStore = useThemeStore()
 const themeClass = themeStore.themeClass
-const isPlaying = ref(false)
-const isLoadingAudio = ref(false)
 const audioPlayer = ref<HTMLAudioElement | null>(null)
-const linesPerPage = ref(20)
-const selectedEncoding = ref('auto')
-const detectedEncoding = ref('')
 const rawFileData = ref<Uint8Array | null>(null)
-const controlsExpanded = ref(true)
-const isAutoMode = ref(true)
 const lastScrollY = ref(0)
+const currentSentenceIndex = ref<number>(-1)
+const sentences = ref<string[]>([])
+const currentSentenceInPage = ref<number>(-1)
+
+// Use store for these values
+const fontSize = computed({
+  get: () => textReaderStore.preferences.fontSize,
+  set: (val) => textReaderStore.setFontSize(val)
+})
+
+const controlsExpanded = computed({
+  get: () => textReaderStore.preferences.controlsExpanded,
+  set: (val) => textReaderStore.setControlsExpanded(val)
+})
+
+const isAutoMode = computed({
+  get: () => textReaderStore.preferences.autoMode,
+  set: (val) => textReaderStore.setAutoMode(val)
+})
+
+const linesPerPage = computed({
+  get: () => textReaderStore.preferences.linesPerPage,
+  set: (val) => textReaderStore.setLinesPerPage(val)
+})
+
+const selectedEncoding = computed({
+  get: () => textReaderStore.getEncodingSettings(props.filePath).selectedEncoding,
+  set: (val) => textReaderStore.setEncodingSettings(props.filePath, { selectedEncoding: val })
+})
+
+const detectedEncoding = computed({
+  get: () => textReaderStore.getEncodingSettings(props.filePath).detectedEncoding,
+  set: (val) => textReaderStore.setEncodingSettings(props.filePath, { detectedEncoding: val })
+})
+
+const isPlaying = computed({
+  get: () => textReaderStore.audioState.isPlaying,
+  set: (val) => textReaderStore.setAudioPlaying(val)
+})
+
+const isLoadingAudio = computed({
+  get: () => textReaderStore.audioState.isLoadingAudio,
+  set: (val) => textReaderStore.setAudioLoading(val)
+})
 
 // Parse content into pages
 const pages = computed(() => {
@@ -151,9 +189,52 @@ const totalPages = computed(() => pages.value.length || 1)
 
 const currentPageContent = computed(() => {
   const content = pages.value[currentPage.value] || ''
-  // Convert to HTML with line breaks
-  return content.split('\n').map(line => `<p>${escapeHtml(line) || '&nbsp;'}</p>`).join('')
+  // Split content into sentences for highlighting
+  const pageSentences = splitIntoSentences(content)
+  sentences.value = pageSentences
+  
+  // Convert to HTML with line breaks and sentence highlighting
+  let sentenceCounter = 0
+  return content.split('\n').map(line => {
+    if (!line.trim()) return '<p>&nbsp;</p>'
+    
+    // Split line into sentences and wrap each one
+    const lineSentences = splitIntoSentences(line)
+    const htmlLine = lineSentences.map((sentence, idx) => {
+      const globalIdx = sentenceCounter++
+      const isCurrentSentence = globalIdx === currentSentenceInPage.value
+      const className = isCurrentSentence ? 'reading-sentence' : ''
+      const dataAttr = `data-sentence-idx="${globalIdx}"`
+      return `<span class="${className}" ${dataAttr}>${escapeHtml(sentence)}</span>`
+    }).join('')
+    
+    return `<p>${htmlLine || '&nbsp;'}</p>`
+  }).join('')
 })
+
+// Helper function to split text into sentences
+function splitIntoSentences(text: string): string[] {
+  if (!text) return []
+  // Split by common sentence endings (period, exclamation, question mark, Chinese periods)
+  // Keep the punctuation with the sentence
+  const regex = /[^。！？\.!\?]+[。！？\.!\?]*/g
+  const matches = text.match(regex) || []
+  return matches.filter(s => s.trim().length > 0)
+}
+
+// Scroll current sentence to middle of viewport
+function scrollToCurrentSentence() {
+  nextTick(() => {
+    const sentenceElement = document.querySelector(`[data-sentence-idx="${currentSentenceInPage.value}"]`)
+    if (sentenceElement) {
+      sentenceElement.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+        inline: 'nearest'
+      })
+    }
+  })
+}
 
 function escapeHtml(text: string): string {
   const div = document.createElement('div')
@@ -165,14 +246,18 @@ function escapeHtml(text: string): string {
 function nextPage() {
   if (currentPage.value < totalPages.value - 1) {
     currentPage.value++
-    saveReadingPosition()
+    currentSentenceInPage.value = -1
+    textReaderStore.setReadingPosition(props.filePath, currentPage.value)
+    updateBookProgress()
   }
 }
 
 function prevPage() {
   if (currentPage.value > 0) {
     currentPage.value--
-    saveReadingPosition()
+    currentSentenceInPage.value = -1
+    textReaderStore.setReadingPosition(props.filePath, currentPage.value)
+    updateBookProgress()
   }
 }
 
@@ -185,24 +270,47 @@ function toggleTheme() {
 function toggleControls() {
   controlsExpanded.value = !controlsExpanded.value
   isAutoMode.value = false // Disable auto mode when manually toggled
-  savePreferences()
 }
 
 // Audio
 async function toggleAudio() {
   if (isPlaying.value) {
     audioPlayer.value?.pause()
+    currentSentenceInPage.value = -1
   } else {
-    await playCurrentPage()
+    currentSentenceInPage.value = 0
+    await playCurrentSentence()
   }
 }
 
-async function playCurrentPage() {
-  const pageText = pages.value[currentPage.value]
-  if (!pageText || !audioPlayer.value) return
+async function playCurrentSentence() {
+  if (currentSentenceInPage.value >= sentences.value.length) {
+    // Reached end of page, move to next page
+    if (currentPage.value < totalPages.value - 1) {
+      nextPage()
+      await nextTick()
+      currentSentenceInPage.value = 0
+      setTimeout(() => playCurrentSentence(), 500)
+    } else {
+      // End of book
+      currentSentenceInPage.value = -1
+      textReaderStore.setAudioPlaying(false)
+    }
+    return
+  }
+
+  const sentenceText = sentences.value[currentSentenceInPage.value]
+  if (!sentenceText || !audioPlayer.value) {
+    currentSentenceInPage.value++
+    playCurrentSentence()
+    return
+  }
+
+  // Scroll to current sentence
+  scrollToCurrentSentence()
 
   try {
-    isLoadingAudio.value = true
+    textReaderStore.setAudioLoading(true)
     
     // Initialize voices if needed
     const voices = await tts.voices()
@@ -215,7 +323,7 @@ async function playCurrentPage() {
     }
 
     const wav = await tts.predict({
-      text: pageText,
+      text: sentenceText.trim(),
       voiceId: voiceId,
     })
 
@@ -225,67 +333,31 @@ async function playCurrentPage() {
   } catch (err) {
     console.error('Audio playback error:', err)
     error.value = 'Failed to play audio'
+    currentSentenceInPage.value = -1
+    textReaderStore.setAudioPlaying(false)
   } finally {
-    isLoadingAudio.value = false
+    textReaderStore.setAudioLoading(false)
   }
+}
+
+async function playCurrentPage() {
+  // Start reading from first sentence
+  currentSentenceInPage.value = 0
+  await playCurrentSentence()
 }
 
 function onAudioEnded() {
-  isPlaying.value = false
-  // Auto advance to next page
-  if (currentPage.value < totalPages.value - 1) {
-    nextPage()
-    setTimeout(() => playCurrentPage(), 500)
-  }
+  // Move to next sentence
+  currentSentenceInPage.value++
+  playCurrentSentence()
 }
 
-// Storage keys
-const getStorageKey = (suffix: string) => `read-text-${props.filePath}-${suffix}`
-
-// Load and save reading position
-function saveReadingPosition() {
-  if (typeof localStorage !== 'undefined') {
-    localStorage.setItem(getStorageKey('page'), String(currentPage.value))
-    localStorage.setItem(getStorageKey('timestamp'), String(Date.now()))
-  }
-  
-  // Update store progress
+// Update book progress in bookReadingStore
+function updateBookProgress() {
   if (bookReadingStore.currentBook && bookReadingStore.currentBook.id === props.filePath) {
     bookReadingStore.updateProgress(props.filePath, currentPage.value, totalPages.value)
   }
 }
-
-function loadReadingPosition() {
-  if (typeof localStorage !== 'undefined') {
-    const savedPage = localStorage.getItem(getStorageKey('page'))
-    if (savedPage) {
-      currentPage.value = parseInt(savedPage, 10) || 0
-    }
-  }
-}
-
-// Save and load preferences
-function savePreferences() {
-  if (typeof localStorage !== 'undefined') {
-    localStorage.setItem('read-text-fontSize', String(fontSize.value))
-    localStorage.setItem('read-text-controlsExpanded', String(controlsExpanded.value))
-    localStorage.setItem('read-text-autoMode', String(isAutoMode.value))
-  }
-}
-
-function loadPreferences() {
-  if (typeof localStorage !== 'undefined') {
-    const savedFontSize = localStorage.getItem('read-text-fontSize')
-    const savedControlsExpanded = localStorage.getItem('read-text-controlsExpanded')
-    const savedAutoMode = localStorage.getItem('read-text-autoMode')
-    if (savedFontSize) fontSize.value = parseInt(savedFontSize, 10)
-    if (savedControlsExpanded !== null) controlsExpanded.value = savedControlsExpanded === 'true'
-    if (savedAutoMode !== null) isAutoMode.value = savedAutoMode === 'true'
-  }
-}
-
-// Watch for changes and save
-watch(fontSize, savePreferences)
 
 // Decode text from raw data with specified encoding
 function decodeText(data: Uint8Array, encoding: string): string {
@@ -351,26 +423,9 @@ function onEncodingChange() {
     
     textContent.value = decodeText(rawFileData.value, encoding)
     currentPage.value = 0
-    saveEncodingPreference()
   } catch (err) {
     console.error('Error changing encoding:', err)
     error.value = 'Error decoding file with selected encoding: ' + (err as Error).message
-  }
-}
-
-// Save and load encoding preference
-function saveEncodingPreference() {
-  if (typeof localStorage !== 'undefined') {
-    localStorage.setItem(getStorageKey('encoding'), selectedEncoding.value)
-  }
-}
-
-function loadEncodingPreference() {
-  if (typeof localStorage !== 'undefined') {
-    const savedEncoding = localStorage.getItem(getStorageKey('encoding'))
-    if (savedEncoding) {
-      selectedEncoding.value = savedEncoding
-    }
   }
 }
 
@@ -404,8 +459,8 @@ async function loadFile() {
     // Store raw data for encoding changes
     rawFileData.value = data
     
-    // Load encoding preference
-    loadEncodingPreference()
+    // Load encoding settings from store
+    textReaderStore.loadEncodingSettings(props.filePath)
     
     // Decode with selected or auto-detected encoding
     let encoding = selectedEncoding.value
@@ -417,7 +472,9 @@ async function loadFile() {
     }
     
     textContent.value = decodeText(data, encoding)
-    loadReadingPosition()
+    
+    // Load reading position from store
+    currentPage.value = textReaderStore.loadReadingPosition(props.filePath)
     
     // Set current book in store if not already set
     if (!bookReadingStore.currentBook || bookReadingStore.currentBook.id !== props.filePath) {
@@ -484,7 +541,9 @@ function handleKeyPress(e: KeyboardEvent) {
 }
 
 onMounted(() => {
-  loadPreferences()
+  // Initialize store
+  textReaderStore.init()
+  
   loadFile()
   window.addEventListener('keydown', handleKeyPress)
   
@@ -498,13 +557,14 @@ onMounted(() => {
 
 // Watch for total pages changes to update store
 watch(totalPages, (newTotal) => {
-  if (bookReadingStore.currentBook && bookReadingStore.currentBook.id === props.filePath) {
-    bookReadingStore.updateProgress(props.filePath, currentPage.value, newTotal)
-  }
+  updateBookProgress()
 })
 
 onUnmounted(() => {
-  saveReadingPosition()
+  // Save final reading position
+  textReaderStore.setReadingPosition(props.filePath, currentPage.value)
+  updateBookProgress()
+  
   window.removeEventListener('keydown', handleKeyPress)
   
   // Remove scroll listener from the scroll container
@@ -520,8 +580,24 @@ onUnmounted(() => {
 })
 
 // Watch for file path changes
-watch(() => props.filePath, () => {
+  watch(() => props.filePath, () => {
   currentPage.value = 0
   loadFile()
 })
 </script>
+
+<style>
+/* Use global styles for v-html rendered content */
+.reading-sentence {
+  background-color: rgba(255, 255, 0, 0.4);
+  padding: 2px 4px;
+  border-radius: 2px;
+  transition: background-color 0.3s ease;
+  box-shadow: 0 0 0 2px rgba(255, 255, 0, 0.2);
+}
+
+.dark .reading-sentence {
+  background-color: rgba(255, 215, 0, 0.3);
+  box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.15);
+}
+</style>
