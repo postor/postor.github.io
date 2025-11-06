@@ -16,7 +16,9 @@
     "fontSize": "Font Size",
     "encoding": "Encoding",
     "loading": "Loading",
-    "noContent": "No content to display"
+    "noContent": "No content to display",
+    "hide": "▲ Hide Controls",
+    "show": "▼ Show Controls"
   },
   "learnGame": {
     "home": "Home",

@@ -2,7 +2,7 @@
   <nav class="text-sm text-slate-700 mb-3">
     <ul class="flex items-center gap-2 flex-wrap">
         <li>
-          <button class="underline whitespace-nowrap" @click="go('my-books')">root</button>
+          <button class="underline whitespace-nowrap" @click="go(ROOT)">root</button>
         </li>
         <template v-for="(crumb, i) in crumbs" :key="i">
           <li class="flex items-center gap-2">
@@ -19,6 +19,7 @@
 import { computed } from 'vue'
 import { defineProps } from 'vue'
 import { useFileBrowserStore } from '../../stores/useFileBrowserStore'
+import { STORAGE_ROOT } from '../../utils/constants'
 
 const props = defineProps<{ path: string }>()
 const store = useFileBrowserStore()
@@ -27,7 +28,7 @@ function go(path: string) {
   store.goTo(path)
 }
 
-const ROOT = 'my-books'
+const ROOT = STORAGE_ROOT
 
 const parts = computed(() => {
   const p = props.path || ''

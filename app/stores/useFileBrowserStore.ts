@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { STORAGE_ROOT, HIDDEN_PREFIX } from '../utils/constants'
 // Local FileEntry type (keeps store self-contained; components import their own types)
 export interface FileEntry {
   id: string
@@ -16,8 +17,7 @@ function makeId() {
   return Math.random().toString(36).slice(2, 9)
 }
 
-const ROOT = 'my-books'
-const HIDDEN_PREFIX = '_'
+const ROOT = STORAGE_ROOT
 
 export const useFileBrowserStore = defineStore('fileBrowser', {
   state: () => ({

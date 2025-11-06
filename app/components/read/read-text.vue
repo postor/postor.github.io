@@ -1,91 +1,97 @@
 <template>
   <div
-    class="min-h-screen bg-white text-neutral-900 transition-colors dark:bg-neutral-900 dark:text-neutral-200"
+    class="min-h-full bg-white text-neutral-900 transition-colors dark:bg-neutral-900 dark:text-neutral-200"
     :class="{ dark: isDarkMode }"
   >
-    <div
-      class="flex flex-col items-stretch gap-4 p-4 border-b bg-neutral-50 dark:bg-neutral-800 dark:border-neutral-700 sm:flex-row sm:items-center sm:justify-between"
-    >
-      <div class="flex items-center gap-3 flex-wrap justify-center sm:justify-start">
-        <button
-          @click="prevPage"
-          :disabled="currentPage <= 0"
-          class="px-3 py-2 border rounded text-sm transition bg-white border-neutral-300 hover:bg-neutral-100 hover:border-neutral-400 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-neutral-800 dark:border-neutral-600 dark:text-neutral-200 dark:hover:bg-neutral-700 dark:hover:border-neutral-500"
+    <!-- Sticky Controls at Top, Expand/Collapse at Bottom of Controls -->
+    <div class="sticky top-0 z-20">
+      <div class="bg-neutral-50 dark:bg-neutral-800 border-b border-neutral-200 dark:border-neutral-700 shadow-lg">
+        <div v-show="controlsExpanded" class="flex flex-col sm:flex-row items-center justify-center gap-4 p-4">
+          <div class="flex items-center gap-3 flex-wrap justify-center sm:justify-start">
+            <button
+              @click="prevPage"
+              :disabled="currentPage <= 0"
+              class="px-3 py-2 border rounded text-sm transition bg-white border-neutral-300 hover:bg-neutral-100 hover:border-neutral-400 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-neutral-800 dark:border-neutral-600 dark:text-neutral-200 dark:hover:bg-neutral-700 dark:hover:border-neutral-500"
+            >
+              ← {{ t('bookReading.prev') }}
+            </button>
+            <span class="font-medium min-w-20 text-center">{{ currentPage + 1 }} / {{ totalPages }}</span>
+            <button
+              @click="nextPage"
+              :disabled="currentPage >= totalPages - 1"
+              class="px-3 py-2 border rounded text-sm transition bg-white border-neutral-300 hover:bg-neutral-100 hover:border-neutral-400 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-neutral-800 dark:border-neutral-600 dark:text-neutral-200 dark:hover:bg-neutral-700 dark:hover:border-neutral-500"
+            >
+              {{ t('bookReading.next') }} →
+            </button>
+          </div>
+          <div class="flex items-center gap-3 flex-wrap justify-center sm:justify-start">
+            <label class="flex items-center gap-2 text-sm">
+              <span>{{ t('bookReading.encoding') || 'Encoding' }}:</span>
+              <select
+                v-model="selectedEncoding"
+                @change="onEncodingChange"
+                class="px-2 py-1 border rounded bg-white border-neutral-300 dark:bg-neutral-800 dark:border-neutral-600 dark:text-neutral-200"
+              >
+                <option value="auto">Auto Detect</option>
+                <option value="utf-8">UTF-8</option>
+                <option value="gbk">GBK</option>
+                <option value="gb2312">GB2312</option>
+                <option value="big5">Big5</option>
+                <option value="shift_jis">Shift-JIS</option>
+                <option value="euc-jp">EUC-JP</option>
+                <option value="euc-kr">EUC-KR</option>
+                <option value="windows-1252">Windows-1252</option>
+                <option value="iso-8859-1">ISO-8859-1</option>
+              </select>
+              <span
+                v-if="detectedEncoding"
+                class="text-xs text-neutral-500 italic dark:text-neutral-400"
+                :title="`Detected: ${detectedEncoding}`"
+              >
+                ({{ detectedEncoding }})
+              </span>
+            </label>
+            <label class="flex items-center gap-2 text-sm">
+              <span>{{ t('bookReading.fontSize') }}:</span>
+              <select
+                v-model="fontSize"
+                class="px-2 py-1 border rounded bg-white border-neutral-300 dark:bg-neutral-800 dark:border-neutral-600 dark:text-neutral-200"
+              >
+                <option value="14">14px</option>
+                <option value="16">16px</option>
+                <option value="18">18px</option>
+                <option value="20">20px</option>
+                <option value="24">24px</option>
+                <option value="28">28px</option>
+                <option value="32">32px</option>
+              </select>
+            </label>
+            <button
+              @click="toggleTheme"
+              class="px-3 py-2 border rounded text-sm transition bg-white border-neutral-300 hover:bg-neutral-100 hover:border-neutral-400 dark:bg-neutral-800 dark:border-neutral-600 dark:text-neutral-200 dark:hover:bg-neutral-700 dark:hover:border-neutral-500"
+            >
+              {{ isDarkMode ? '☀️' : '🌙' }}
+            </button>
+            <button
+              @click="toggleAudio"
+              :disabled="isLoadingAudio"
+              class="px-3 py-2 border rounded text-sm transition bg-white border-neutral-300 hover:bg-neutral-100 hover:border-neutral-400 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-neutral-800 dark:border-neutral-600 dark:text-neutral-200 dark:hover:bg-neutral-700 dark:hover:border-neutral-500"
+            >
+              {{ isPlaying ? '⏸️' : '▶️' }}
+            </button>
+          </div>
+        </div>
+        <!-- Expand/Collapse toggle at bottom of controls -->
+        <div 
+          @click="toggleControls" 
+          class="cursor-pointer px-4 py-1 text-center select-none text-sm text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-700 border-t border-neutral-200 dark:border-neutral-600"
         >
-          ← {{ t('bookReading.prev') }}
-        </button>
-  <span class="font-medium min-w-20 text-center">{{ currentPage + 1 }} / {{ totalPages }}</span>
-        <button
-          @click="nextPage"
-          :disabled="currentPage >= totalPages - 1"
-          class="px-3 py-2 border rounded text-sm transition bg-white border-neutral-300 hover:bg-neutral-100 hover:border-neutral-400 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-neutral-800 dark:border-neutral-600 dark:text-neutral-200 dark:hover:bg-neutral-700 dark:hover:border-neutral-500"
-        >
-          {{ t('bookReading.next') }} →
-        </button>
-      </div>
-
-  <div class="flex items-center gap-3 flex-wrap justify-center sm:justify-start">
-        <label class="flex items-center gap-2 text-sm">
-          <span>{{ t('bookReading.encoding') || 'Encoding' }}:</span>
-          <select
-            v-model="selectedEncoding"
-            @change="onEncodingChange"
-            class="px-2 py-1 border rounded bg-white border-neutral-300 dark:bg-neutral-800 dark:border-neutral-600 dark:text-neutral-200"
-          >
-            <option value="auto">Auto Detect</option>
-            <option value="utf-8">UTF-8</option>
-            <option value="gbk">GBK</option>
-            <option value="gb2312">GB2312</option>
-            <option value="big5">Big5</option>
-            <option value="shift_jis">Shift-JIS</option>
-            <option value="euc-jp">EUC-JP</option>
-            <option value="euc-kr">EUC-KR</option>
-            <option value="windows-1252">Windows-1252</option>
-            <option value="iso-8859-1">ISO-8859-1</option>
-          </select>
-          <span
-            v-if="detectedEncoding"
-            class="text-xs text-neutral-500 italic dark:text-neutral-400"
-            :title="`Detected: ${detectedEncoding}`"
-          >
-            ({{ detectedEncoding }})
-          </span>
-        </label>
-
-        <label class="flex items-center gap-2 text-sm">
-          <span>{{ t('bookReading.fontSize') }}:</span>
-          <select
-            v-model="fontSize"
-            class="px-2 py-1 border rounded bg-white border-neutral-300 dark:bg-neutral-800 dark:border-neutral-600 dark:text-neutral-200"
-          >
-            <option value="14">14px</option>
-            <option value="16">16px</option>
-            <option value="18">18px</option>
-            <option value="20">20px</option>
-            <option value="24">24px</option>
-            <option value="28">28px</option>
-            <option value="32">32px</option>
-          </select>
-        </label>
-
-        <button
-          @click="toggleTheme"
-          class="px-3 py-2 border rounded text-sm transition bg-white border-neutral-300 hover:bg-neutral-100 hover:border-neutral-400 dark:bg-neutral-800 dark:border-neutral-600 dark:text-neutral-200 dark:hover:bg-neutral-700 dark:hover:border-neutral-500"
-        >
-          {{ isDarkMode ? '☀️' : '🌙' }}
-        </button>
-
-        <button
-          @click="toggleAudio"
-          :disabled="isLoadingAudio"
-          class="px-3 py-2 border rounded text-sm transition bg-white border-neutral-300 hover:bg-neutral-100 hover:border-neutral-400 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-neutral-800 dark:border-neutral-600 dark:text-neutral-200 dark:hover:bg-neutral-700 dark:hover:border-neutral-500"
-        >
-          {{ isPlaying ? '⏸️' : '▶️' }}
-        </button>
+          {{ controlsExpanded ? (t('bookReading.hide') || '▲ Hide Controls') : (t('bookReading.show') || '▼ Show Controls') }}
+        </div>
       </div>
     </div>
 
-    <div class="max-w-[800px] mx-auto p-8 leading-8 sm:p-4" :style="{ fontSize: fontSize + 'px' }">
+  <div class="max-w-[800px] mx-auto p-8 leading-8 sm:p-4" :style="{ fontSize: fontSize + 'px' }">
       <div v-if="loading" class="text-center p-8 text-base">{{ t('bookReading.loading') }}...</div>
       <div v-else-if="error" class="text-center p-8 text-base text-red-600 dark:text-red-400">{{ error }}</div>
       <div v-else-if="currentPageContent" class="space-y-2" v-html="currentPageContent"></div>
@@ -93,6 +99,7 @@
     </div>
 
     <audio ref="audioPlayer" @ended="onAudioEnded" @play="isPlaying = true" @pause="isPlaying = false" style="display: none;"></audio>
+
   </div>
 </template>
 
@@ -107,6 +114,7 @@ const props = defineProps<{
 }>()
 
 const { t } = useI18n()
+const bookReadingStore = useBookReadingStore()
 
 // State
 const loading = ref(true)
@@ -122,6 +130,9 @@ const linesPerPage = ref(20)
 const selectedEncoding = ref('auto')
 const detectedEncoding = ref('')
 const rawFileData = ref<Uint8Array | null>(null)
+const controlsExpanded = ref(true)
+const isAutoMode = ref(true)
+const lastScrollY = ref(0)
 
 // Parse content into pages
 const pages = computed(() => {
@@ -166,6 +177,13 @@ function prevPage() {
 // Theme
 function toggleTheme() {
   isDarkMode.value = !isDarkMode.value
+  savePreferences()
+}
+
+// Controls toggle
+function toggleControls() {
+  controlsExpanded.value = !controlsExpanded.value
+  isAutoMode.value = false // Disable auto mode when manually toggled
   savePreferences()
 }
 
@@ -229,6 +247,11 @@ function saveReadingPosition() {
     localStorage.setItem(getStorageKey('page'), String(currentPage.value))
     localStorage.setItem(getStorageKey('timestamp'), String(Date.now()))
   }
+  
+  // Update store progress
+  if (bookReadingStore.currentBook && bookReadingStore.currentBook.id === props.filePath) {
+    bookReadingStore.updateProgress(props.filePath, currentPage.value, totalPages.value)
+  }
 }
 
 function loadReadingPosition() {
@@ -245,6 +268,8 @@ function savePreferences() {
   if (typeof localStorage !== 'undefined') {
     localStorage.setItem('read-text-fontSize', String(fontSize.value))
     localStorage.setItem('read-text-darkMode', String(isDarkMode.value))
+    localStorage.setItem('read-text-controlsExpanded', String(controlsExpanded.value))
+    localStorage.setItem('read-text-autoMode', String(isAutoMode.value))
   }
 }
 
@@ -252,9 +277,13 @@ function loadPreferences() {
   if (typeof localStorage !== 'undefined') {
     const savedFontSize = localStorage.getItem('read-text-fontSize')
     const savedDarkMode = localStorage.getItem('read-text-darkMode')
+    const savedControlsExpanded = localStorage.getItem('read-text-controlsExpanded')
+    const savedAutoMode = localStorage.getItem('read-text-autoMode')
     
     if (savedFontSize) fontSize.value = parseInt(savedFontSize, 10)
     if (savedDarkMode) isDarkMode.value = savedDarkMode === 'true'
+    if (savedControlsExpanded !== null) controlsExpanded.value = savedControlsExpanded === 'true'
+    if (savedAutoMode !== null) isAutoMode.value = savedAutoMode === 'true'
   }
 }
 
@@ -392,11 +421,56 @@ async function loadFile() {
     
     textContent.value = decodeText(data, encoding)
     loadReadingPosition()
+    
+    // Set current book in store if not already set
+    if (!bookReadingStore.currentBook || bookReadingStore.currentBook.id !== props.filePath) {
+      const fileName = props.filePath.split('/').pop() || props.filePath
+      const book = {
+        id: props.filePath,
+        title: fileName,
+        filePath: props.filePath,
+        total: 0, // Will be updated when pages are calculated
+        current: currentPage.value,
+        lastRead: Date.now(),
+      }
+      bookReadingStore.setCurrentBook(book)
+    }
   } catch (err) {
     console.error('Error loading file:', err)
     error.value = 'Error loading file: ' + (err as Error).message
   } finally {
     loading.value = false
+  }
+}
+
+// Scroll handler for auto collapse/expand
+function handleScroll() {
+  if (!isAutoMode.value) return
+  
+  // Get the scroll container (parent element with overflow)
+  const scrollContainer = document.querySelector('.overflow-y-auto')
+  if (!scrollContainer) return
+  
+  const currentScrollY = scrollContainer.scrollTop
+  const scrollThreshold = 100
+  
+  // Only trigger if scroll delta is significant (at least 10px)
+  const scrollDelta = Math.abs(currentScrollY - lastScrollY.value)
+  
+  if (scrollDelta > 10) {
+    if (currentScrollY > lastScrollY.value && currentScrollY > scrollThreshold) {
+      // Scrolling down significantly - collapse
+      if (controlsExpanded.value) {
+        controlsExpanded.value = false
+      }
+    } else if (currentScrollY < lastScrollY.value) {
+      // Scrolling up - expand
+      if (!controlsExpanded.value) {
+        controlsExpanded.value = true
+      }
+    }
+    
+    lastScrollY.value = currentScrollY
   }
 }
 
@@ -416,11 +490,31 @@ onMounted(() => {
   loadPreferences()
   loadFile()
   window.addEventListener('keydown', handleKeyPress)
+  
+  // Add scroll listener to the scroll container
+  const scrollContainer = document.querySelector('.overflow-y-auto')
+  if (scrollContainer) {
+    scrollContainer.addEventListener('scroll', handleScroll, { passive: true })
+    lastScrollY.value = scrollContainer.scrollTop
+  }
+})
+
+// Watch for total pages changes to update store
+watch(totalPages, (newTotal) => {
+  if (bookReadingStore.currentBook && bookReadingStore.currentBook.id === props.filePath) {
+    bookReadingStore.updateProgress(props.filePath, currentPage.value, newTotal)
+  }
 })
 
 onUnmounted(() => {
   saveReadingPosition()
   window.removeEventListener('keydown', handleKeyPress)
+  
+  // Remove scroll listener from the scroll container
+  const scrollContainer = document.querySelector('.overflow-y-auto')
+  if (scrollContainer) {
+    scrollContainer.removeEventListener('scroll', handleScroll)
+  }
   
   // Clean up audio URL
   if (audioPlayer.value?.src) {

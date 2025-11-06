@@ -16,7 +16,9 @@
     "fontSize": "字体大小",
     "encoding": "编码",
     "loading": "加载中",
-    "noContent": "暂无内容"
+    "noContent": "暂无内容",
+    "hide": "▲ 隐藏控制",
+    "show": "▼ 显示控制"
   },
   "learnGame": {
     "home": "首页",

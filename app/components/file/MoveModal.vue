@@ -31,6 +31,7 @@ import { ref, onMounted, computed, watch } from 'vue'
 import FolderTree from './FolderTree.vue'
 import * as opfs from '../../utils/opfs'
 import { useFileBrowserStore } from '../../stores/useFileBrowserStore'
+import { STORAGE_ROOT } from '../../utils/constants'
 import { UModal, UButton } from '#components'
 
 interface FolderNode {
@@ -45,17 +46,17 @@ const store = useFileBrowserStore()
 const open = ref(true)
 const target = ref(store.moveTarget || '')
 
-// display-only path without the top-level root (e.g., "my-books")
+// display-only path without the top-level internal root
 const displayTarget = computed<string>({
   get() {
-    const root = (store.currentPath || '').split('/').filter(Boolean)[0] || 'my-books'
+    const root = (store.currentPath || '').split('/').filter(Boolean)[0] || STORAGE_ROOT
     const t = target.value || ''
     if (!t) return ''
     if (t === root) return ''
     return t.startsWith(root + '/') ? t.slice(root.length + 1) : t
   },
   set(val: string) {
-    const root = (store.currentPath || '').split('/').filter(Boolean)[0] || 'my-books'
+    const root = (store.currentPath || '').split('/').filter(Boolean)[0] || STORAGE_ROOT
     const v = (val || '').replace(/^\/+/, '')
     target.value = v ? `${root}/${v}` : root
   }
@@ -75,8 +76,8 @@ watch(open, (val) => {
 })
 
 async function loadTree() {
-  // root the tree at the top-level "my-books" (first segment of store.currentPath)
-  const root = (store.currentPath || '').split('/').filter(Boolean)[0] || 'my-books'
+  // root the tree at the top-level internal storage root
+  const root = (store.currentPath || '').split('/').filter(Boolean)[0] || STORAGE_ROOT
   tree.value = await buildTree(root, 4)
 }
 
