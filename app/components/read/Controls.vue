@@ -103,7 +103,7 @@
 import { useI18n } from 'vue-i18n'
 import { useThemeStore } from '~/stores/useThemeStore'
 import { useTextReaderStore } from '~/stores/useTextReaderStore'
-import { ref, computed, inject } from 'vue'
+import { ref, computed, inject, type ComputedRef } from 'vue'
 import { getDefaultEngine, setDefaultEngine } from '~/utils/tts/tts'
 import type { TTSEngine } from '~/utils/tts/tts'
 
@@ -112,9 +112,11 @@ const textReaderStore = useTextReaderStore()
 
 // Get context from parent component
 const filePath = inject<string>('filePath', '')
-const currentPage = inject<number>('currentPage', 0)
-const totalPages = inject<number>('totalPages', 1)
+const currentPage = inject<ComputedRef<number>>('currentPage', computed(() => 0))
+const totalPages = inject<ComputedRef<number>>('totalPages', computed(() => 1))
 const onEncodingChangeCallback = inject<(encoding: string) => void>('onEncodingChange', () => {})
+const toggleAudioFn = inject<() => void>('toggleAudio', () => {})
+const goToPage = inject<(page: number) => void>('goToPage', () => {})
 
 const ttsEngine = ref<TTSEngine>(getDefaultEngine())
 
@@ -129,19 +131,19 @@ function onEncodingChange(encoding: string) {
 }
 
 function nextPage() {
-  if (currentPage < totalPages - 1) {
-    textReaderStore.setReadingPosition(filePath, currentPage + 1)
+  if (currentPage.value < totalPages.value - 1) {
+    goToPage(currentPage.value + 1)
   }
 }
 
 function prevPage() {
-  if (currentPage > 0) {
-    textReaderStore.setReadingPosition(filePath, currentPage - 1)
+  if (currentPage.value > 0) {
+    goToPage(currentPage.value - 1)
   }
 }
 
 function toggleAudio() {
-  textReaderStore.setAudioPlaying(!textReaderStore.audioState.isPlaying)
+  toggleAudioFn()
 }
 
 function toggleControls() {

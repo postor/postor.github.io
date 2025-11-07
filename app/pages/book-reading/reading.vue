@@ -37,12 +37,13 @@ onMounted(() => {
     if (!store.currentBook || store.currentBook.filePath !== filePath.value) {
       const fileName = filePath.value.split('/').pop() || filePath.value
       const currentPos = textReaderStore.loadReadingPosition(filePath.value)
+      const currentPage = currentPos?.currentPage ?? 0
       const book = {
         id: filePath.value,
         title: fileName,
         filePath: filePath.value,
         total: 0,
-        current: currentPos || 0,
+        current: currentPage,
         lastRead: Date.now(),
       }
       store.setCurrentBook(book)

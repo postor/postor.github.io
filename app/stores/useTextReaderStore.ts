@@ -17,6 +17,7 @@ export interface EncodingSettings {
 export interface ReadingPosition {
   filePath: string
   currentPage: number
+  currentSentenceIndex: number
   timestamp: number
 }
 
@@ -141,10 +142,33 @@ export const useTextReaderStore = defineStore('textReader', {
     },
 
     // Reading position management
-    setReadingPosition(filePath: string, page: number) {
+    setReadingPosition(filePath: string, page: number, sentenceIndex?: number) {
+      const previous = this.readingPositions[filePath]
+      const nextSentenceIndex = typeof sentenceIndex === 'number'
+        ? sentenceIndex
+        : previous?.currentSentenceIndex ?? -1
+
       this.readingPositions[filePath] = {
         filePath,
         currentPage: page,
+        currentSentenceIndex: nextSentenceIndex,
+        timestamp: Date.now(),
+      }
+      this.saveReadingPosition(filePath)
+    },
+
+    updateReadingPosition(filePath: string, position: Partial<Pick<ReadingPosition, 'currentPage' | 'currentSentenceIndex'>>) {
+      const existing = this.readingPositions[filePath] || {
+        filePath,
+        currentPage: 0,
+        currentSentenceIndex: -1,
+        timestamp: Date.now(),
+      }
+
+      this.readingPositions[filePath] = {
+        filePath,
+        currentPage: typeof position.currentPage === 'number' ? position.currentPage : existing.currentPage,
+        currentSentenceIndex: typeof position.currentSentenceIndex === 'number' ? position.currentSentenceIndex : existing.currentSentenceIndex,
         timestamp: Date.now(),
       }
       this.saveReadingPosition(filePath)
@@ -160,21 +184,34 @@ export const useTextReaderStore = defineStore('textReader', {
       }
     },
 
-    loadReadingPosition(filePath: string): number {
+    loadReadingPosition(filePath: string): ReadingPosition {
       if (typeof localStorage !== 'undefined') {
         const key = `text-reader-position-${filePath}`
         const saved = localStorage.getItem(key)
         if (saved) {
           try {
-            const position = JSON.parse(saved)
+            const raw = JSON.parse(saved)
+            const position: ReadingPosition = {
+              filePath,
+              currentPage: raw?.currentPage ?? 0,
+              currentSentenceIndex: typeof raw?.currentSentenceIndex === 'number' ? raw.currentSentenceIndex : -1,
+              timestamp: raw?.timestamp ?? Date.now(),
+            }
             this.readingPositions[filePath] = position
-            return position.currentPage || 0
+            return position
           } catch (err) {
             console.error('Error loading reading position:', err)
           }
         }
       }
-      return 0
+      const fallback: ReadingPosition = {
+        filePath,
+        currentPage: 0,
+        currentSentenceIndex: -1,
+        timestamp: Date.now(),
+      }
+      this.readingPositions[filePath] = fallback
+      return fallback
     },
 
     // Audio state management
