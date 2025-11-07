@@ -19,6 +19,8 @@ export const useBookReadingStore = defineStore('bookReading', {
     recentBooks: [],
     currentBook: null,
   }),
+  // Persist this store to localStorage on the client
+  persist: true,
   actions: {
     addRecentBook(book: Book) {
       const idx = this.recentBooks.findIndex(b => b.id === book.id)

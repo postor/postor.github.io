@@ -3,100 +3,7 @@
     class="min-h-full bg-white text-neutral-900 transition-colors dark:bg-neutral-900 dark:text-neutral-200"
     :class="themeClass"
   >
-    <!-- Sticky Controls at Top, Expand/Collapse at Bottom of Controls -->
-    <div class="sticky top-0 z-20">
-      <div class="bg-neutral-50 dark:bg-neutral-800 border-b border-neutral-200 dark:border-neutral-700 shadow-lg">
-        <div v-show="controlsExpanded" class="flex flex-col sm:flex-row items-center justify-center gap-4 p-4">
-          <div class="flex items-center gap-3 flex-wrap justify-center sm:justify-start">
-            <button
-              @click="prevPage"
-              :disabled="currentPage <= 0"
-              class="px-3 py-2 border rounded text-sm transition bg-white border-neutral-300 hover:bg-neutral-100 hover:border-neutral-400 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-neutral-800 dark:border-neutral-600 dark:text-neutral-200 dark:hover:bg-neutral-700 dark:hover:border-neutral-500"
-            >
-              ← {{ t('bookReading.prev') }}
-            </button>
-            <span class="font-medium min-w-20 text-center">{{ currentPage + 1 }} / {{ totalPages }}</span>
-            <button
-              @click="nextPage"
-              :disabled="currentPage >= totalPages - 1"
-              class="px-3 py-2 border rounded text-sm transition bg-white border-neutral-300 hover:bg-neutral-100 hover:border-neutral-400 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-neutral-800 dark:border-neutral-600 dark:text-neutral-200 dark:hover:bg-neutral-700 dark:hover:border-neutral-500"
-            >
-              {{ t('bookReading.next') }} →
-            </button>
-          </div>
-          <div class="flex items-center gap-3 flex-wrap justify-center sm:justify-start">
-            <label class="flex items-center gap-2 text-sm">
-              <span>{{ t('bookReading.encoding') || 'Encoding' }}:</span>
-              <select
-                v-model="selectedEncoding"
-                @change="onEncodingChange"
-                class="px-2 py-1 border rounded bg-white border-neutral-300 dark:bg-neutral-800 dark:border-neutral-600 dark:text-neutral-200"
-              >
-                <option value="auto">Auto Detect</option>
-                <option value="utf-8">UTF-8</option>
-                <option value="gbk">GBK</option>
-                <option value="gb2312">GB2312</option>
-                <option value="big5">Big5</option>
-                <option value="shift_jis">Shift-JIS</option>
-                <option value="euc-jp">EUC-JP</option>
-                <option value="euc-kr">EUC-KR</option>
-                <option value="windows-1252">Windows-1252</option>
-                <option value="iso-8859-1">ISO-8859-1</option>
-              </select>
-              <span
-                v-if="detectedEncoding"
-                class="text-xs text-neutral-500 italic dark:text-neutral-400"
-                :title="`Detected: ${detectedEncoding}`"
-              >
-                ({{ detectedEncoding }})
-              </span>
-            </label>
-            <label class="flex items-center gap-2 text-sm">
-              <span>{{ t('bookReading.fontSize') }}:</span>
-              <select
-                v-model="fontSize"
-                class="px-2 py-1 border rounded bg-white border-neutral-300 dark:bg-neutral-800 dark:border-neutral-600 dark:text-neutral-200"
-              >
-                <option value="14">14px</option>
-                <option value="16">16px</option>
-                <option value="18">18px</option>
-                <option value="20">20px</option>
-                <option value="24">24px</option>
-                <option value="28">28px</option>
-                <option value="32">32px</option>
-              </select>
-            </label>
-            <label class="flex items-center gap-2 text-sm">
-              <span>TTS:</span>
-              <select v-model="ttsEngine" class="px-2 py-1 border rounded bg-white border-neutral-300 dark:bg-neutral-800 dark:border-neutral-600 dark:text-neutral-200">
-                <option value="piper">Piper</option>
-                <option value="kokoro">KokoroJS</option>
-              </select>
-            </label>
-            <button
-              @click="toggleTheme"
-              class="px-3 py-2 border rounded text-sm transition bg-white border-neutral-300 hover:bg-neutral-100 hover:border-neutral-400 dark:bg-neutral-800 dark:border-neutral-600 dark:text-neutral-200 dark:hover:bg-neutral-700 dark:hover:border-neutral-500"
-            >
-              {{ themeStore.isDark ? '☀️' : '🌙' }}
-            </button>
-            <button
-              @click="toggleAudio"
-              :disabled="isLoadingAudio"
-              class="px-3 py-2 border rounded text-sm transition bg-white border-neutral-300 hover:bg-neutral-100 hover:border-neutral-400 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-neutral-800 dark:border-neutral-600 dark:text-neutral-200 dark:hover:bg-neutral-700 dark:hover:border-neutral-500"
-            >
-              {{ isPlaying ? '⏸️' : '▶️' }}
-            </button>
-          </div>
-        </div>
-        <!-- Expand/Collapse toggle at bottom of controls -->
-        <div 
-          @click="toggleControls" 
-          class="cursor-pointer px-4 py-1 text-center select-none text-sm text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-700 border-t border-neutral-200 dark:border-neutral-600"
-        >
-          {{ controlsExpanded ? (t('bookReading.hide') || '▲ Hide Controls') : (t('bookReading.show') || '▼ Show Controls') }}
-        </div>
-      </div>
-    </div>
+    <Controls />
 
   <div class="max-w-[800px] mx-auto p-8 leading-8 sm:p-4" :style="{ fontSize: fontSize + 'px' }">
       <div v-if="loading" class="text-center p-8 text-base">{{ t('bookReading.loading') }}...</div>
@@ -111,8 +18,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
-import { getVoices, predict as ttsPredict } from '~/utils/tts'
+import { ref, computed, watch, onMounted, onUnmounted, nextTick, provide } from 'vue'
+import Controls from './Controls.vue'
+import { getVoices, predict as ttsPredict } from '~/utils/tts/tts'
 import * as iconv from 'iconv-lite'
 import jschardet from 'jschardet'
 import { useThemeStore } from '~/stores/useThemeStore'
@@ -139,6 +47,12 @@ const lastScrollY = ref(0)
 const currentSentenceIndex = ref<number>(-1)
 const sentences = ref<string[]>([])
 const currentSentenceInPage = ref<number>(-1)
+
+// Provide context to Controls component
+provide('filePath', computed(() => props.filePath))
+provide('currentPage', computed(() => currentPage.value))
+provide('totalPages', computed(() => totalPages.value))
+provide('onEncodingChange', onEncodingChange)
 
 // Use store for these values
 const fontSize = computed({
@@ -182,8 +96,8 @@ const isLoadingAudio = computed({
 })
 
 // TTS Engine selection
-import { getDefaultEngine, setDefaultEngine } from '~/utils/tts'
-import type { TTSEngine } from '~/utils/tts'
+import { getDefaultEngine, setDefaultEngine } from '~/utils/tts/tts'
+import type { TTSEngine } from '~/utils/tts/tts'
 const ttsEngine = ref<TTSEngine>(getDefaultEngine())
 watch(ttsEngine, (val) => {
   setDefaultEngine(val)
@@ -277,14 +191,10 @@ function prevPage() {
 }
 
 // Theme
-function toggleTheme() {
-  themeStore.setTheme(themeStore.isDark ? 'light' : 'dark')
-}
-
-// Controls toggle
+// Controls toggle (moved theme toggle to Controls component)
 function toggleControls() {
   controlsExpanded.value = !controlsExpanded.value
-  isAutoMode.value = false // Disable auto mode when manually toggled
+  isAutoMode.value = false
 }
 
 // Audio
@@ -577,6 +487,30 @@ onMounted(() => {
 // Watch for total pages changes to update store
 watch(totalPages, (newTotal) => {
   updateBookProgress()
+})
+
+// Watch for reading position changes from store (e.g., from Controls component)
+watch(() => textReaderStore.getReadingPosition(props.filePath), (position) => {
+  if (position && position.currentPage !== currentPage.value) {
+    currentPage.value = position.currentPage
+    currentSentenceInPage.value = -1
+    updateBookProgress()
+  }
+})
+
+// Watch for audio state changes from store (e.g., from Controls component)
+watch(() => textReaderStore.audioState.isPlaying, (newIsPlaying, oldIsPlaying) => {
+  if (newIsPlaying !== oldIsPlaying) {
+    if (newIsPlaying && !audioPlayer.value?.src) {
+      // Start playing audio from Controls component
+      currentSentenceInPage.value = 0
+      playCurrentSentence()
+    } else if (!newIsPlaying && audioPlayer.value) {
+      // Stop playing audio from Controls component
+      audioPlayer.value.pause()
+      currentSentenceInPage.value = -1
+    }
+  }
 })
 
 onUnmounted(() => {

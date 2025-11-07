@@ -7,7 +7,7 @@
   </div>
 </template>
 <script setup lang="ts">
-import { streamTTS, initTTS } from '~/utils/tts'
+import { streamTTS, initTTS } from '~/utils/tts/tts'
 
 const audioChunks = ref<string[]>([])
 const status = ref('')

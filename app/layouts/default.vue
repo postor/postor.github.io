@@ -6,7 +6,6 @@
         <NuxtLink to="/">{{ t('nav.home') }}</NuxtLink>
       </div>
       <div class="nav-right">
-        <I18nSelect />
       </div>
     </nav>
     <slot />

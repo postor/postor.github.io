@@ -1,0 +1,14 @@
+
+// @ts-nocheck
+// Barrel re-exports for backward compatibility
+export type { TTSEngine, TTSVoice, TTSPredictOptions, TTSStreamChunk, ITTSManager } from './types'
+export {
+  TTSManager,
+  ttsManager,
+  initTTS,
+  getVoices,
+  predict,
+  streamTTS,
+  setDefaultEngine,
+  getDefaultEngine,
+} from './manager'
