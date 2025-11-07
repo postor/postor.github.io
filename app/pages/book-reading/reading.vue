@@ -13,10 +13,12 @@ import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import ReadText from '~/components/read/read-text.vue'
 import { useBookReadingStore } from '~/stores/useBookReadingStore'
+import { useTextReaderStore } from '~/stores/useTextReaderStore'
 
 const route = useRoute()
 const { t } = useI18n()
 const store = useBookReadingStore()
+const textReaderStore = useTextReaderStore()
 const filePath = ref<string>('')
 const headerHeight = ref(56) // Default h-14 = 56px
 const footerHeight = ref(56) // Default h-14 = 56px
@@ -28,6 +30,23 @@ onMounted(() => {
     filePath.value = fileParam
   } else if (store.currentBook) {
     filePath.value = store.currentBook.filePath
+  }
+
+  // If opened via ?file=... then ensure the book store is aware of the current file
+  if (filePath.value) {
+    if (!store.currentBook || store.currentBook.filePath !== filePath.value) {
+      const fileName = filePath.value.split('/').pop() || filePath.value
+      const currentPos = textReaderStore.loadReadingPosition(filePath.value)
+      const book = {
+        id: filePath.value,
+        title: fileName,
+        filePath: filePath.value,
+        total: 0,
+        current: currentPos || 0,
+        lastRead: Date.now(),
+      }
+      store.setCurrentBook(book)
+    }
   }
   
   // Detect actual header and footer heights

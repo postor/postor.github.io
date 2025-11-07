@@ -9,7 +9,8 @@
     <main class="flex-1 mt-14 mb-14">
       <slot />
     </main>
-    <nav class="fixed bottom-0 left-0 right-0 z-50 flex flex-row justify-evenly border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 h-14">
+  <ClientOnly>
+  <nav class="fixed bottom-0 left-0 right-0 z-50 flex flex-row justify-evenly border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 h-14">
       <button
         :class="[
           'flex flex-col items-center justify-center flex-1 h-full px-2 py-1 text-sm font-medium transition-colors',
@@ -47,6 +48,7 @@
         <span>{{ t('nav.read') }}</span>
       </button>
     </nav>
+    </ClientOnly>
   </div>
 </template>
 
@@ -56,6 +58,8 @@ import { useThemeStore } from '~/stores/useThemeStore'
 import { useRoute, useRouter } from 'vue-router'
 import { computed } from 'vue'
 import { Icon } from '#components'
+import { useBookReadingStore } from '~/stores/useBookReadingStore'
+import { useI18n } from 'vue-i18n'
 
 const themeStore = useThemeStore()
 const themeClass = themeStore.themeClass
