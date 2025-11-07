@@ -1,4 +1,6 @@
 import { defineStore } from 'pinia'
+import * as iconv from 'iconv-lite'
+import jschardet from 'jschardet'
 
 export interface TextReaderPreferences {
   fontSize: number
@@ -202,6 +204,61 @@ export const useTextReaderStore = defineStore('textReader', {
     // Initialize store
     init() {
       this.loadPreferences()
+    },
+
+    // Encoding detection helper (used by components to decode raw file data)
+    detectEncoding(data: Uint8Array): string {
+      try {
+        // Convert a sample of the binary data to a binary string for jschardet
+        let binaryString = ''
+        const len = Math.min(data.length, 100000)
+        for (let i = 0; i < len; i++) {
+          const byte = data[i]
+          if (byte !== undefined) binaryString += String.fromCharCode(byte)
+        }
+
+        const result = jschardet.detect(binaryString)
+        if (result && result.encoding) {
+          const encodingMap: Record<string, string> = {
+            'GB2312': 'gbk',
+            'GB18030': 'gbk',
+            'windows-1252': 'windows-1252',
+            'UTF-8': 'utf-8',
+            'Big5': 'big5',
+            'SHIFT_JIS': 'shift_jis',
+            'EUC-JP': 'euc-jp',
+            'EUC-KR': 'euc-kr',
+          }
+          return encodingMap[result.encoding] || result.encoding.toLowerCase()
+        }
+      } catch (err) {
+        console.error('Error detecting encoding in store:', err)
+      }
+      return 'utf-8'
+    },
+
+    // Decode raw file data using the selected encoding for the given filePath.
+    // This centralizes iconv/jschardet usage in the store.
+    decodeFile(filePath: string, data: Uint8Array): string {
+      try {
+        // Ensure encoding settings exist for the file
+        const settings = this.getEncodingSettings(filePath)
+        let encoding = settings.selectedEncoding || 'auto'
+
+        if (encoding === 'auto') {
+          encoding = this.detectEncoding(data)
+          this.setEncodingSettings(filePath, { detectedEncoding: encoding })
+        } else {
+          this.setEncodingSettings(filePath, { detectedEncoding: '' })
+        }
+
+        // iconv-lite can decode a Uint8Array directly
+        const decoded = iconv.decode(data, encoding)
+        return decoded
+      } catch (err) {
+        console.error('Error decoding file in store:', err)
+        throw err
+      }
     },
   },
 })

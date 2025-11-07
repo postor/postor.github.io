@@ -5,14 +5,14 @@
   >
     <Controls />
 
-  <div class="max-w-[800px] mx-auto p-8 leading-8 sm:p-4" :style="{ fontSize: fontSize + 'px' }">
+  <div class="max-w-[800px] mx-auto p-8 leading-8 sm:p-4" :style="{ fontSize: textReaderStore.preferences.fontSize + 'px' }">
       <div v-if="loading" class="text-center p-8 text-base">{{ t('bookReading.loading') }}...</div>
       <div v-else-if="error" class="text-center p-8 text-base text-red-600 dark:text-red-400">{{ error }}</div>
       <div v-else-if="currentPageContent" class="space-y-2" v-html="currentPageContent"></div>
       <div v-else class="text-center p-8 text-base">{{ t('bookReading.noContent') }}</div>
     </div>
 
-    <audio ref="audioPlayer" @ended="onAudioEnded" @play="isPlaying = true" @pause="isPlaying = false" style="display: none;"></audio>
+  <audio ref="audioPlayer" @ended="onAudioEnded" @play="textReaderStore.setAudioPlaying(true)" @pause="textReaderStore.setAudioPlaying(false)" style="display: none;"></audio>
 
   </div>
 </template>
@@ -21,8 +21,6 @@
 import { ref, computed, watch, onMounted, onUnmounted, nextTick, provide } from 'vue'
 import Controls from './Controls.vue'
 import { getVoices, predict as ttsPredict } from '~/utils/tts/tts'
-import * as iconv from 'iconv-lite'
-import jschardet from 'jschardet'
 import { useThemeStore } from '~/stores/useThemeStore'
 import { useTextReaderStore } from '~/stores/useTextReaderStore'
 
@@ -54,46 +52,8 @@ provide('currentPage', computed(() => currentPage.value))
 provide('totalPages', computed(() => totalPages.value))
 provide('onEncodingChange', onEncodingChange)
 
-// Use store for these values
-const fontSize = computed({
-  get: () => textReaderStore.preferences.fontSize,
-  set: (val) => textReaderStore.setFontSize(val)
-})
 
-const controlsExpanded = computed({
-  get: () => textReaderStore.preferences.controlsExpanded,
-  set: (val) => textReaderStore.setControlsExpanded(val)
-})
-
-const isAutoMode = computed({
-  get: () => textReaderStore.preferences.autoMode,
-  set: (val) => textReaderStore.setAutoMode(val)
-})
-
-const linesPerPage = computed({
-  get: () => textReaderStore.preferences.linesPerPage,
-  set: (val) => textReaderStore.setLinesPerPage(val)
-})
-
-const selectedEncoding = computed({
-  get: () => textReaderStore.getEncodingSettings(props.filePath).selectedEncoding,
-  set: (val) => textReaderStore.setEncodingSettings(props.filePath, { selectedEncoding: val })
-})
-
-const detectedEncoding = computed({
-  get: () => textReaderStore.getEncodingSettings(props.filePath).detectedEncoding,
-  set: (val) => textReaderStore.setEncodingSettings(props.filePath, { detectedEncoding: val })
-})
-
-
-const isPlaying = computed({
-  get: () => textReaderStore.audioState.isPlaying,
-  set: (val) => textReaderStore.setAudioPlaying(val)
-})
-const isLoadingAudio = computed({
-  get: () => textReaderStore.audioState.isLoadingAudio,
-  set: (val) => textReaderStore.setAudioLoading(val)
-})
+// Use the Pinia store directly (access reactive properties and call actions)
 
 // TTS Engine selection
 import { getDefaultEngine, setDefaultEngine } from '~/utils/tts/tts'
@@ -108,8 +68,8 @@ const pages = computed(() => {
   if (!textContent.value) return []
   const lines = textContent.value.split('\n')
   const result: string[] = []
-  for (let i = 0; i < lines.length; i += linesPerPage.value) {
-    result.push(lines.slice(i, i + linesPerPage.value).join('\n'))
+  for (let i = 0; i < lines.length; i += textReaderStore.preferences.linesPerPage) {
+    result.push(lines.slice(i, i + textReaderStore.preferences.linesPerPage).join('\n'))
   }
   return result
 })
@@ -193,13 +153,13 @@ function prevPage() {
 // Theme
 // Controls toggle (moved theme toggle to Controls component)
 function toggleControls() {
-  controlsExpanded.value = !controlsExpanded.value
-  isAutoMode.value = false
+  textReaderStore.setControlsExpanded(!textReaderStore.preferences.controlsExpanded)
+  textReaderStore.setAutoMode(false)
 }
 
 // Audio
 async function toggleAudio() {
-  if (isPlaying.value) {
+  if (textReaderStore.audioState.isPlaying) {
     audioPlayer.value?.pause()
     currentSentenceInPage.value = -1
   } else {
@@ -237,13 +197,14 @@ async function playCurrentSentence() {
   try {
     textReaderStore.setAudioLoading(true)
     
-    // Initialize voices if needed
-    const voices = await getVoices(ttsEngine.value)
+    // Use the current engine from the TTS manager so Controls changes take effect
+    const currentEngine = getDefaultEngine()
+    const voices = await getVoices(currentEngine)
     // Use Chinese voice if available, fallback to first available
     let voiceId = ''
-    if (ttsEngine.value === 'piper') {
+    if (currentEngine === 'piper') {
       voiceId = 'zh_CN-huayan-medium'
-    } else if (ttsEngine.value === 'kokoro') {
+    } else if (currentEngine === 'kokoro') {
       // 默认用af_heart，若不存在则用第一个
       voiceId = 'af_heart'
     }
@@ -253,8 +214,8 @@ async function playCurrentSentence() {
     }
     const wav = await ttsPredict({
       text: sentenceText.trim(),
-      voiceId: voiceId,
-      engine: ttsEngine.value,
+      voiceId,
+      engine: currentEngine,
     })
     const url = URL.createObjectURL(wav)
     audioPlayer.value.src = url
@@ -288,69 +249,15 @@ function updateBookProgress() {
   }
 }
 
-// Decode text from raw data with specified encoding
-function decodeText(data: Uint8Array, encoding: string): string {
-  try {
-    // iconv-lite works with Uint8Array in browser
-    const decoded = iconv.decode(data, encoding)
-    return decoded
-  } catch (err) {
-    console.error('Error decoding with encoding:', encoding, err)
-    throw new Error(`Failed to decode with encoding: ${encoding}`)
-  }
-}
-
-// Detect encoding from raw data
-function detectEncoding(data: Uint8Array): string {
-  try {
-    // jschardet can work with string created from the binary data
-    // Convert Uint8Array to a binary string for jschardet
-    let binaryString = ''
-    const len = Math.min(data.length, 100000) // Sample first 100KB for detection
-    for (let i = 0; i < len; i++) {
-      const byte = data[i]
-      if (byte !== undefined) {
-        binaryString += String.fromCharCode(byte)
-      }
-    }
-    
-    const result = jschardet.detect(binaryString)
-    if (result && result.encoding) {
-      console.log('Detected encoding:', result.encoding, 'confidence:', result.confidence)
-      // Map common encoding names to iconv-lite compatible names
-      const encodingMap: Record<string, string> = {
-        'GB2312': 'gbk',
-        'GB18030': 'gbk',
-        'windows-1252': 'windows-1252',
-        'UTF-8': 'utf-8',
-        'Big5': 'big5',
-        'SHIFT_JIS': 'shift_jis',
-        'EUC-JP': 'euc-jp',
-        'EUC-KR': 'euc-kr',
-      }
-      return encodingMap[result.encoding] || result.encoding.toLowerCase()
-    }
-  } catch (err) {
-    console.error('Error detecting encoding:', err)
-  }
-  return 'utf-8'
-}
+// Encoding/detection/decoding moved to `textReaderStore.decodeFile` and `textReaderStore.detectEncoding`.
 
 // Handle encoding change
 function onEncodingChange() {
   if (!rawFileData.value) return
   
   try {
-    let encoding = selectedEncoding.value
-    
-    if (encoding === 'auto') {
-      encoding = detectEncoding(rawFileData.value)
-      detectedEncoding.value = encoding
-    } else {
-      detectedEncoding.value = ''
-    }
-    
-    textContent.value = decodeText(rawFileData.value, encoding)
+    // Delegate decoding to the store (it will read selectedEncoding and update detectedEncoding)
+    textContent.value = textReaderStore.decodeFile(props.filePath, rawFileData.value)
     currentPage.value = 0
   } catch (err) {
     console.error('Error changing encoding:', err)
@@ -391,16 +298,8 @@ async function loadFile() {
     // Load encoding settings from store
     textReaderStore.loadEncodingSettings(props.filePath)
     
-    // Decode with selected or auto-detected encoding
-    let encoding = selectedEncoding.value
-    if (encoding === 'auto') {
-      encoding = detectEncoding(data)
-      detectedEncoding.value = encoding
-    } else {
-      detectedEncoding.value = ''
-    }
-    
-    textContent.value = decodeText(data, encoding)
+    // Delegate decoding to the store (it will read selectedEncoding and update detectedEncoding)
+    textContent.value = textReaderStore.decodeFile(props.filePath, data)
     
     // Load reading position from store
     currentPage.value = textReaderStore.loadReadingPosition(props.filePath)
@@ -428,7 +327,7 @@ async function loadFile() {
 
 // Scroll handler for auto collapse/expand
 function handleScroll() {
-  if (!isAutoMode.value) return
+  if (!textReaderStore.preferences.autoMode) return
   
   // Get the scroll container (parent element with overflow)
   const scrollContainer = document.querySelector('.overflow-y-auto')
@@ -443,13 +342,13 @@ function handleScroll() {
   if (scrollDelta > 10) {
     if (currentScrollY > lastScrollY.value && currentScrollY > scrollThreshold) {
       // Scrolling down significantly - collapse
-      if (controlsExpanded.value) {
-        controlsExpanded.value = false
+      if (textReaderStore.preferences.controlsExpanded) {
+        textReaderStore.setControlsExpanded(false)
       }
     } else if (currentScrollY < lastScrollY.value) {
       // Scrolling up - expand
-      if (!controlsExpanded.value) {
-        controlsExpanded.value = true
+      if (!textReaderStore.preferences.controlsExpanded) {
+        textReaderStore.setControlsExpanded(true)
       }
     }
     
