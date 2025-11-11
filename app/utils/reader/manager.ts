@@ -1,5 +1,7 @@
 // @ts-nocheck
 import type { TTSSourceFetcher } from './types'
+import { getDefaultEngine } from '~/utils/tts/tts'
+import EasySpeech from 'easy-speech'
 
 export interface ReaderSession {
   id: string
@@ -33,6 +35,14 @@ class ReaderManager {
   private currentSession: ReaderSession | null = null
   private currentIndex = -1
   private playRequestCounter = 0
+  private easySpeechReady = false
+  // Playback control flags
+  private paused = false
+  private pauseAfterCurrent = false
+  private hardPaused = false
+  // Inspectors
+  public isPaused() { return this.paused }
+  public getPausedState() { return { paused: this.paused, hard: this.hardPaused, finishAfterCurrent: this.pauseAfterCurrent } }
 
   constructor() {
     if (typeof window !== 'undefined') {
@@ -98,12 +108,14 @@ class ReaderManager {
     this.sessionToken = Symbol(session.id)
     if (typeof session.startIndex === 'number') {
       this.currentIndex = session.startIndex
-      if (session.startIndex >= 0) {
-        this.prefetchFrom(session.startIndex)
-      }
+      // Don't prefetch automatically - wait for user to start playing
     } else {
       this.currentIndex = -1
     }
+    // Reset pause flags when loading a new session
+    this.paused = false
+    this.pauseAfterCurrent = false
+    this.hardPaused = false
   }
 
   seek(index: number) {
@@ -114,9 +126,7 @@ class ReaderManager {
     }
     const clamped = this.clampIndex(index)
     this.currentIndex = clamped
-    if (clamped >= 0) {
-      this.prefetchFrom(clamped)
-    }
+    // Do not prefetch on seek; wait until user explicitly plays
   }
 
   async playFrom(index: number) {
@@ -126,6 +136,31 @@ class ReaderManager {
 
   async resume() {
     if (!this.currentSession) return
+    // Clear pause flags
+    const wasHard = this.hardPaused
+    this.paused = false
+    this.pauseAfterCurrent = false
+    this.hardPaused = false
+
+    // If we hard paused mid-sentence, try to resume underlying engine directly
+    if (wasHard) {
+      if (this.isEasySpeechEngine()) {
+        try { EasySpeech.resume() } catch (_) {}
+        if (this.currentIndex < 0) {
+          await this.playFrom(0)
+        }
+        return
+      }
+      try {
+        if (this.audio?.src) {
+          await this.audio.play()
+          return
+        }
+      } catch (_) {
+        // fallback below
+      }
+    }
+
     if (this.currentIndex < 0) {
       await this.playFrom(0)
       return
@@ -133,15 +168,33 @@ class ReaderManager {
     await this.playCurrent()
   }
 
-  pause() {
-    try {
-      this.audio.pause()
-    } catch (e) {
-      // ignore pause errors
+  /**
+   * Pause playback.
+   * @param opts.finishSentence When true (default), allow the current sentence to complete, then stop before advancing. When false, pause immediately.
+   */
+  pause(opts: { finishSentence?: boolean } = {}) {
+    const finishSentence = opts.finishSentence !== false
+    this.paused = true
+    this.pauseAfterCurrent = !!finishSentence
+    this.hardPaused = !finishSentence
+
+    // Notify UI immediately regardless of engine states
+    this.events.onAudioPause?.()
+
+    // If immediate pause requested, pause underlying engine now
+    if (!finishSentence) {
+      if (this.isEasySpeechEngine()) {
+        try { EasySpeech.pause() } catch (_) {}
+        return
+      }
+      try { this.audio.pause() } catch (_) {}
     }
   }
 
   stop() {
+    if (this.isEasySpeechEngine()) {
+      try { EasySpeech.cancel() } catch (_) {}
+    }
     try {
       this.audio.pause()
     } catch (e) {
@@ -157,6 +210,9 @@ class ReaderManager {
     }
     this.currentIndex = -1
     this.playRequestCounter++
+    this.paused = false
+    this.pauseAfterCurrent = false
+    this.hardPaused = false
   }
 
   dispose() {
@@ -190,7 +246,9 @@ class ReaderManager {
   }
 
   private handlePlay = () => {
-    this.events.onAudioPlay?.()
+    if (!this.paused) {
+      this.events.onAudioPlay?.()
+    }
   }
 
   private handlePause = () => {
@@ -204,6 +262,15 @@ class ReaderManager {
     }
 
     const nextIdx = this.currentIndex + 1
+    // If pause was requested to finish current sentence, stop here and stay paused
+    if (this.paused && this.pauseAfterCurrent) {
+      // Prepare to start from next sentence on resume
+      if (this.currentSession && nextIdx < this.currentSession.sentences.length) {
+        this.currentIndex = nextIdx
+      }
+      return
+    }
+
     if (!this.currentSession || nextIdx >= this.currentSession.sentences.length) {
       this.events.onQueueComplete?.()
       return
@@ -226,7 +293,8 @@ class ReaderManager {
   }
 
   private async playCurrent() {
-    if (!this.currentSession || !this.fetcher) return
+    if (!this.currentSession) return
+    if (this.paused) return
     const index = this.clampIndex(this.currentIndex)
     if (index < 0) {
       this.events.onQueueComplete?.()
@@ -248,6 +316,13 @@ class ReaderManager {
     const myReq = ++this.playRequestCounter
 
     try {
+      // If EasySpeech engine is active, bypass blob fetch and use Web Speech API
+      if (this.isEasySpeechEngine()) {
+        await this.playWithEasySpeech(index, sentence, myReq)
+        return
+      }
+
+  if (!this.fetcher) return
       const url = await this.ensureUrlFor(index, token)
       if (!url) return
       if (myReq !== this.playRequestCounter) return
@@ -266,10 +341,83 @@ class ReaderManager {
 
       this.events.onSentenceStart?.(index, sentence)
 
+      // Apply user-preferred playback speed (read from persisted preferences if available)
+      try {
+        const pref = typeof localStorage !== 'undefined' ? localStorage.getItem('text-reader-preferences') : null
+        const prefs = pref ? JSON.parse(pref) : null
+        const speed = prefs?.ttsSpeed ?? 1
+        if (this.audio && typeof this.audio.playbackRate === 'number') {
+          this.audio.playbackRate = Number(speed) || 1
+        }
+      } catch (e) {
+        // ignore parsing errors and fallback to default playbackRate
+      }
+
+      if (this.paused) return
       await this.audio.play()
 
       this.prefetchFrom(index + 1)
       this.pruneBuffer(index - this.bufferSize)
+    } catch (err) {
+      this.events.onError?.(err)
+    }
+  }
+
+  private isEasySpeechEngine(): boolean {
+    try {
+      return getDefaultEngine() === 'easy-speech'
+    } catch (_) {
+      return false
+    }
+  }
+
+  private async ensureEasySpeechReady() {
+    if (this.easySpeechReady) return
+    if (typeof window === 'undefined') return
+    try {
+      await EasySpeech.init({ maxTimeout: 5000, interval: 250, quiet: true })
+      this.easySpeechReady = true
+    } catch (e) {
+      this.easySpeechReady = false
+      throw e
+    }
+  }
+
+  private async playWithEasySpeech(index: number, sentence: string, myReq: number) {
+    await this.ensureEasySpeechReady()
+    const token = this.sessionToken
+
+    if (!sentence?.trim()) return
+
+    if (myReq !== this.playRequestCounter) return
+
+    this.events.onSentenceStart?.(index, sentence)
+    this.events.onAudioPlay?.()
+
+    try {
+      // Try to read preferred rate from persisted preferences
+      let rate = 1
+      try {
+        const pref = typeof localStorage !== 'undefined' ? localStorage.getItem('text-reader-preferences') : null
+        const prefs = pref ? JSON.parse(pref) : null
+        rate = prefs?.ttsSpeed ?? 1
+      } catch (e) {
+        // ignore
+      }
+
+      await EasySpeech.speak({ text: sentence, rate })
+      if (!this.sessionToken || this.sessionToken !== token) return
+      if (myReq !== this.playRequestCounter) return
+
+      this.events.onSentenceEnd?.(index, sentence)
+
+      const nextIdx = index + 1
+      if (!this.currentSession || nextIdx >= this.currentSession.sentences.length) {
+        this.events.onQueueComplete?.()
+        return
+      }
+      this.currentIndex = nextIdx
+      await this.playCurrent()
     } catch (err) {
       this.events.onError?.(err)
     }

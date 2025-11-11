@@ -20,14 +20,15 @@ export class PiperAdapter implements TTSEngineAdapter {
   }
 
   async predict(options: TTSPredictOptions): Promise<Blob> {
-    const { text, voiceId } = options
+    const { text, voiceId, speed } = options
     const voices = await piperTTS.voices()
     let selectedVoiceId = voiceId || 'zh_CN-huayan-medium'
     const hasVoice = voices.some((v: any) => v.key === selectedVoiceId)
     if (!hasVoice && voices.length > 0 && voices[0]) {
       selectedVoiceId = voices[0].key
     }
-    const wav = await piperTTS.predict({ text: text.trim(), voiceId: selectedVoiceId })
+    // Pass speed if available — piper adapter may use length/scale params; many adapters will ignore unknown keys
+    const wav = await piperTTS.predict({ text: text.trim(), voiceId: selectedVoiceId, ...(typeof speed === 'number' ? { speed } : {}) })
     return wav
   }
 }

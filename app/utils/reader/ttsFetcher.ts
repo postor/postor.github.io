@@ -1,6 +1,7 @@
 // @ts-nocheck
 import { predict, getVoices, getDefaultEngine } from '~/utils/tts/tts'
 import type { TTSEngine } from '~/utils/tts/tts'
+import { useTextReaderStore } from '~/stores/useTextReaderStore'
 import type { TTSSourceFetcher } from './types'
 
 const engineVoiceCache = new Map<TTSEngine, string>()
@@ -36,7 +37,15 @@ export function createTTSFetcher(): TTSSourceFetcher {
     const engine = getDefaultEngine()
     const voiceId = await resolveVoice(engine)
     try {
-      const wav = await predict({ text, voiceId, engine })
+      // read preferred speed from store (client-side)
+      let speed = 1
+      try {
+        const store = useTextReaderStore()
+        speed = store.preferences.ttsSpeed ?? 1
+      } catch (e) {
+        // ignore if store not available
+      }
+      const wav = await predict({ text, voiceId, engine, speed })
       return wav
     } catch (err) {
       console.warn('tts fetcher error', err)

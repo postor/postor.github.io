@@ -28,7 +28,7 @@ export class OutettsAdapter implements TTSEngineAdapter {
   }
 
   async predict(options: TTSPredictOptions): Promise<Blob> {
-    const { text, speaker, temperature, repetition_penalty, max_length } = options
+    const { text, speaker, temperature, repetition_penalty, max_length, speed } = options
     if (!this.instance) await this.init()
     const spk = this.instance.load_default_speaker(speaker || 'male_1')
     const output = await this.instance.generate({
@@ -37,6 +37,8 @@ export class OutettsAdapter implements TTSEngineAdapter {
       repetition_penalty: repetition_penalty ?? 1.1,
       max_length: max_length ?? 4096,
       speaker: spk,
+      // forward speed if provided
+      ...(typeof speed === 'number' ? { speed } : {}),
     })
     const wavData = output.wav ?? output.toWav?.() ?? output
     return new Blob([wavData], { type: 'audio/wav' })

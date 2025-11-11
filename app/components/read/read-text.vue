@@ -208,12 +208,19 @@ function recordSentenceProgress(index: number) {
 async function toggleAudio() {
   if (!isSessionReady.value || !activeSentences.value.length) return
 
-  if (textReaderStore.audioState.isLoadingAudio) return
-
-  if (textReaderStore.audioState.isPlaying) {
-    readerManager.pause()
+  // Immediate UI toggle regardless of engine state
+  const nowPlaying = textReaderStore.audioState.isPlaying
+  if (nowPlaying) {
+    // Switch to paused state immediately and let current sentence finish
+    textReaderStore.setAudioPlaying(false)
+    try {
+      readerManager.pause({ finishSentence: true })
+    } catch (_) {}
     return
   }
+
+  // Switch to playing state immediately
+  textReaderStore.setAudioPlaying(true)
 
   const fallbackIndex = Math.max(getSentenceIndexForPage(currentPage.value), 0)
   const startIndex = currentSentenceGlobal.value >= 0 ? currentSentenceGlobal.value : fallbackIndex
@@ -221,7 +228,12 @@ async function toggleAudio() {
   try {
     textReaderStore.setAudioLoading(true)
     error.value = ''
-    await readerManager.playFrom(startIndex)
+    // If there is a current index, resume; else start from startIndex
+    if (readerManager.getCurrentIndex() >= 0) {
+      await readerManager.resume()
+    } else {
+      await readerManager.playFrom(startIndex)
+    }
   } catch (err) {
     console.error('Audio playback error:', err)
     error.value = t('bookReading.ttsError') || 'Failed to play audio'
@@ -396,6 +408,13 @@ const readerEvents = {
     textReaderStore.setAudioLoading(false)
   },
   onAudioPlay: () => {
+    // Ignore play events while UI is in paused state (e.g., finish-current behavior)
+    try {
+      // Prefer class method; fallback to any
+      // @ts-ignore
+      const paused = typeof (readerManager as any).isPaused === 'function' ? (readerManager as any).isPaused() === true : false
+      if (paused) return
+    } catch (_) {}
     textReaderStore.setAudioPlaying(true)
   },
   onAudioPause: () => {

@@ -7,10 +7,14 @@ import type { ITTSManager, TTSEngine, TTSStreamChunk, TTSPredictOptions, TTSVoic
 import { PiperAdapter } from './engines/piper'
 import { KokoroAdapter } from './engines/kokoro'
 import { OutettsAdapter } from './engines/outetts'
+import { EasySpeechAdapter } from './engines/easy-speech'
 
 export class TTSManager implements ITTSManager {
-  private defaultEngine: TTSEngine = 'piper'
+  private defaultEngine: TTSEngine = 'easy-speech'
   private initialized = false
+  // Track which engine adapters have been initialized to avoid calling
+  // Web Speech APIs (easy-speech) before init.
+  private initializedAdapters: Set<TTSEngine> = new Set()
   private adapters: Record<TTSEngine, TTSEngineAdapter>
 
   constructor() {
@@ -18,6 +22,7 @@ export class TTSManager implements ITTSManager {
       piper: new PiperAdapter(),
       kokoro: new KokoroAdapter(),
       outetts: new OutettsAdapter(),
+      'easy-speech': new EasySpeechAdapter(),
     }
   }
 
@@ -26,22 +31,35 @@ export class TTSManager implements ITTSManager {
     return this.adapters[key]
   }
 
-  async init(engine: TTSEngine = 'piper') {
+  async init(engine: TTSEngine = 'easy-speech') {
     this.defaultEngine = engine
-    await this.getAdapter(engine).init()
+    const adapter = this.getAdapter(engine)
+    if (!this.initializedAdapters.has(engine)) {
+      await adapter.init()
+      this.initializedAdapters.add(engine)
+    }
     this.initialized = true
   }
 
   async getVoices(engine?: TTSEngine): Promise<TTSVoice[]> {
     const selectedEngine = engine || this.defaultEngine
+    // Ensure adapter is initialized before listing voices (needed for easy-speech)
+    if (!this.initializedAdapters.has(selectedEngine)) {
+      await this.getAdapter(selectedEngine).init()
+      this.initializedAdapters.add(selectedEngine)
+    }
     return this.getAdapter(selectedEngine).getVoices()
   }
 
   async predict(options: TTSPredictOptions): Promise<Blob> {
-    const { text, voiceId, engine, speaker, temperature, repetition_penalty, max_length } = options
+    const { text, voiceId, engine, speaker, temperature, repetition_penalty, max_length, speed } = options
     const selectedEngine = engine || this.defaultEngine
-    if (!this.initialized) await this.init(selectedEngine)
-    return this.getAdapter(selectedEngine).predict({ text, voiceId, engine: selectedEngine, speaker, temperature, repetition_penalty, max_length })
+    if (!this.initializedAdapters.has(selectedEngine)) {
+      await this.getAdapter(selectedEngine).init()
+      this.initializedAdapters.add(selectedEngine)
+      this.initialized = true
+    }
+    return this.getAdapter(selectedEngine).predict({ text, voiceId, engine: selectedEngine, speaker, temperature, repetition_penalty, max_length, speed })
   }
 
 
@@ -72,7 +90,7 @@ export class TTSManager implements ITTSManager {
 
 export const ttsManager: ITTSManager = new TTSManager()
 
-export async function initTTS(engine: TTSEngine = 'piper') {
+export async function initTTS(engine: TTSEngine = 'easy-speech') {
   return ttsManager.init(engine)
 }
 export async function getVoices(engine?: TTSEngine): Promise<TTSVoice[]> {

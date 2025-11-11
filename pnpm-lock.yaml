@@ -26,6 +26,9 @@ importers:
       '@vite-pwa/nuxt':
         specifier: 1.0.7
         version: 1.0.7(magicast@0.3.5)(vite@7.1.12(@types/node@24.10.0)(jiti@2.6.1)(lightningcss@1.30.2)(terser@5.44.0)(yaml@2.8.1))(workbox-build@7.3.0)(workbox-window@7.3.0)
+      easy-speech:
+        specifier: ^2.4.0
+        version: 2.4.0
       encoding:
         specifier: ^0.1.13
         version: 0.1.13
@@ -2904,6 +2907,10 @@ packages:
 
   eastasianwidth@0.2.0:
     resolution: {integrity: sha512-I88TYZWc9XiYHRQ4/3c5rjjfgkjhLyW2luGIheGERbNQ6OY7yTybanSpDXZa8y7VUP9YmDcYa+eyq4ca7iLqWA==}
+
+  easy-speech@2.4.0:
+    resolution: {integrity: sha512-wpMv29DEoeP/eyXr4aXpDqd9DvlXl7aQs7BgfKbjGVxqkmQPgNmpbF5YULaTH5bc/5qrteg5MDfCD2Zd0qr4rQ==}
+    engines: {node: '>= 14.x'}
 
   ee-first@1.1.1:
     resolution: {integrity: sha512-WMwm9LhRUo+WUaRN+vRuETqG89IgZphVSNkdFgeb6sS/E4OrDIN7t48CAewSHXc6C8lefD8KKfr5vY61brQlow==}
@@ -8903,6 +8910,8 @@ snapshots:
   duplexer@0.1.2: {}
 
   eastasianwidth@0.2.0: {}
+
+  easy-speech@2.4.0: {}
 
   ee-first@1.1.1: {}
 

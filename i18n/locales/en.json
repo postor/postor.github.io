@@ -18,7 +18,8 @@
     "loading": "Loading",
     "noContent": "No content to display",
     "hide": "▲ Hide Controls",
-    "show": "▼ Show Controls"
+    "show": "▼ Show Controls",
+    "ttsError": "Failed to play audio"
   },
   "learnGame": {
     "home": "Home",

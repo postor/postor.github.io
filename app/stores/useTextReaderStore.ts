@@ -7,6 +7,8 @@ export interface TextReaderPreferences {
   controlsExpanded: boolean
   autoMode: boolean
   linesPerPage: number
+  // TTS playback speed multiplier (e.g. 1.0 = normal)
+  ttsSpeed?: number
 }
 
 export interface EncodingSettings {
@@ -40,6 +42,7 @@ export const useTextReaderStore = defineStore('textReader', {
       controlsExpanded: true,
       autoMode: true,
       linesPerPage: 20,
+      ttsSpeed: 1,
     },
     encodingSettings: {},
     readingPositions: {},

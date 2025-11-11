@@ -18,7 +18,8 @@
     "loading": "加载中",
     "noContent": "暂无内容",
     "hide": "▲ 隐藏控制",
-    "show": "▼ 显示控制"
+    "show": "▼ 显示控制",
+    "ttsError": "播放音频失败"
   },
   "learnGame": {
     "home": "首页",

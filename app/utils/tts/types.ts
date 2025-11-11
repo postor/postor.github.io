@@ -1,7 +1,7 @@
 // @ts-nocheck
 // Types and interfaces for the unified TTS layer
 
-export type TTSEngine = 'piper' | 'kokoro' | 'outetts'
+export type TTSEngine = 'piper' | 'kokoro' | 'outetts' | 'easy-speech'
 
 export interface TTSVoice {
   key: string
@@ -18,6 +18,8 @@ export interface TTSPredictOptions {
   temperature?: number
   repetition_penalty?: number
   max_length?: number
+  // Optional playback/generation speed multiplier. 1 = normal, <1 slower, >1 faster
+  speed?: number
 }
 
 export interface TTSStreamChunk {

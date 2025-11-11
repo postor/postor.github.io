@@ -50,10 +50,11 @@ export class KokoroAdapter implements TTSEngineAdapter {
   }
 
   async predict(options: TTSPredictOptions): Promise<Blob> {
-    const { text, voiceId } = options
+    const { text, voiceId, speed } = options
     if (!this.instance) await this.init()
     const voice = voiceId || 'af'
-    const audio = await this.instance.generate(text, { voice })
+    // pass speed through if provided (kokoro-js supports generation options)
+    const audio = await this.instance.generate(text, { voice, ...(typeof speed === 'number' ? { speed } : {}) })
     const wav = audio.toWav()
     return new Blob([wav], { type: 'audio/wav' })
   }

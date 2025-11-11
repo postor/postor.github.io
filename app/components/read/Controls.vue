@@ -72,6 +72,22 @@
            <option value="piper">Piper</option>
            <option value="kokoro">KokoroJS</option>
            <option value="outetts">Outetts</option>
+           <option value="easy-speech">Easy Speech</option>
+            </select>
+          </label>
+          <label class="flex items-center gap-2 text-sm">
+            <span>Speed:</span>
+            <select
+              :value="useTextReaderStore().preferences.ttsSpeed"
+              @change="(e) => useTextReaderStore().updatePreferences({ ttsSpeed: Number((e.target as HTMLSelectElement).value) })"
+              class="px-2 py-1 border rounded bg-white border-neutral-300 dark:bg-neutral-800 dark:border-neutral-600 dark:text-neutral-200"
+            >
+              <option value="0.5">0.5x</option>
+              <option value="0.75">0.75x</option>
+              <option value="1">1x</option>
+              <option value="1.25">1.25x</option>
+              <option value="1.5">1.5x</option>
+              <option value="2">2x</option>
             </select>
           </label>
           <button
@@ -82,7 +98,6 @@
           </button>
           <button
             @click="toggleAudio"
-            :disabled="useTextReaderStore().audioState.isLoadingAudio"
             class="px-3 py-2 border rounded text-sm transition bg-white border-neutral-300 hover:bg-neutral-100 hover:border-neutral-400 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-neutral-800 dark:border-neutral-600 dark:text-neutral-200 dark:hover:bg-neutral-700 dark:hover:border-neutral-500"
           >
             {{ useTextReaderStore().audioState.isPlaying ? '⏸️' : '▶️' }}
