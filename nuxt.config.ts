@@ -2,7 +2,7 @@
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
-  ssr: true,
+  ssr: false,
   // Add Pinia and Tailwind css modules (install packages before use)
   modules: ['@pinia/nuxt', '@nuxt/ui', '@vite-pwa/nuxt', '@nuxtjs/i18n'],
   app: {

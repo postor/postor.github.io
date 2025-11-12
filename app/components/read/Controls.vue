@@ -1,7 +1,7 @@
 <template>
   <div class="sticky top-0 z-20">
     <div class="bg-neutral-50 dark:bg-neutral-800 border-b border-neutral-200 dark:border-neutral-700 shadow-lg">
-      <div v-show="useTextReaderStore().preferences.controlsExpanded" class="flex flex-col sm:flex-row items-center justify-center gap-4 p-4">
+      <div v-show="textReaderStore.preferences.controlsExpanded" class="flex flex-col sm:flex-row items-center justify-center gap-4 p-4">
         <div class="flex items-center gap-3 flex-wrap justify-center sm:justify-start">
           <button
             @click="prevPage"
@@ -23,7 +23,7 @@
           <label class="flex items-center gap-2 text-sm">
             <span>{{ t('bookReading.encoding') || 'Encoding' }}:</span>
             <select
-              :value="useTextReaderStore().getEncodingSettings(filePath).selectedEncoding"
+              :value="textReaderStore.getEncodingSettings(filePath).selectedEncoding"
               @change="(e) => onEncodingChange((e.target as HTMLSelectElement).value)"
               class="px-2 py-1 border rounded bg-white border-neutral-300 dark:bg-neutral-800 dark:border-neutral-600 dark:text-neutral-200"
             >
@@ -39,18 +39,18 @@
               <option value="iso-8859-1">ISO-8859-1</option>
             </select>
             <span
-              v-if="useTextReaderStore().getEncodingSettings(filePath).detectedEncoding"
+              v-if="textReaderStore.getEncodingSettings(filePath).detectedEncoding"
               class="text-xs text-neutral-500 italic dark:text-neutral-400"
-              :title="`Detected: ${useTextReaderStore().getEncodingSettings(filePath).detectedEncoding}`"
+              :title="`Detected: ${textReaderStore.getEncodingSettings(filePath).detectedEncoding}`"
             >
-              ({{ useTextReaderStore().getEncodingSettings(filePath).detectedEncoding }})
+              ({{ textReaderStore.getEncodingSettings(filePath).detectedEncoding }})
             </span>
           </label>
           <label class="flex items-center gap-2 text-sm">
             <span>{{ t('bookReading.fontSize') }}:</span>
             <select
-              :value="useTextReaderStore().preferences.fontSize"
-              @change="(e) => useTextReaderStore().setFontSize(Number((e.target as HTMLSelectElement).value))"
+              :value="textReaderStore.preferences.fontSize"
+              @change="(e) => textReaderStore.setFontSize(Number((e.target as HTMLSelectElement).value))"
               class="px-2 py-1 border rounded bg-white border-neutral-300 dark:bg-neutral-800 dark:border-neutral-600 dark:text-neutral-200"
             >
               <option value="14">14px</option>
@@ -78,8 +78,8 @@
           <label class="flex items-center gap-2 text-sm">
             <span>Speed:</span>
             <select
-              :value="useTextReaderStore().preferences.ttsSpeed"
-              @change="(e) => useTextReaderStore().updatePreferences({ ttsSpeed: Number((e.target as HTMLSelectElement).value) })"
+              :value="textReaderStore.preferences.ttsSpeed"
+              @change="(e) => textReaderStore.updatePreferences({ ttsSpeed: Number((e.target as HTMLSelectElement).value) })"
               class="px-2 py-1 border rounded bg-white border-neutral-300 dark:bg-neutral-800 dark:border-neutral-600 dark:text-neutral-200"
             >
               <option value="0.5">0.5x</option>
@@ -100,7 +100,7 @@
             @click="toggleAudio"
             class="px-3 py-2 border rounded text-sm transition bg-white border-neutral-300 hover:bg-neutral-100 hover:border-neutral-400 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-neutral-800 dark:border-neutral-600 dark:text-neutral-200 dark:hover:bg-neutral-700 dark:hover:border-neutral-500"
           >
-            {{ useTextReaderStore().audioState.isPlaying ? '⏸️' : '▶️' }}
+            {{ textReaderStore.audioState.isPlaying ? '⏸️' : '▶️' }}
           </button>
         </div>
       </div>
@@ -108,7 +108,7 @@
         @click="toggleControls" 
         class="cursor-pointer px-4 py-1 text-center select-none text-sm text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-700 border-t border-neutral-200 dark:border-neutral-600"
       >
-        {{ useTextReaderStore().preferences.controlsExpanded ? (t('bookReading.hide') || '▲ Hide Controls') : (t('bookReading.show') || '▼ Show Controls') }}
+        {{ textReaderStore.preferences.controlsExpanded ? (t('bookReading.hide') || '▲ Hide Controls') : (t('bookReading.show') || '▼ Show Controls') }}
       </div>
     </div>
   </div>
@@ -118,20 +118,17 @@
 import { useI18n } from 'vue-i18n'
 import { useThemeStore } from '~/stores/useThemeStore'
 import { useTextReaderStore } from '~/stores/useTextReaderStore'
-import { ref, computed, inject, type ComputedRef } from 'vue'
+import { ref, computed } from 'vue'
 import { getDefaultEngine, setDefaultEngine } from '~/utils/tts/tts'
 import type { TTSEngine } from '~/utils/tts/tts'
 
 const { t } = useI18n()
 const textReaderStore = useTextReaderStore()
 
-// Get context from parent component
-const filePath = inject<string>('filePath', '')
-const currentPage = inject<ComputedRef<number>>('currentPage', computed(() => 0))
-const totalPages = inject<ComputedRef<number>>('totalPages', computed(() => 1))
-const onEncodingChangeCallback = inject<(encoding: string) => void>('onEncodingChange', () => {})
-const toggleAudioFn = inject<() => void>('toggleAudio', () => {})
-const goToPage = inject<(page: number) => void>('goToPage', () => {})
+// Use active file from store directly
+const filePath = computed<string>(() => textReaderStore.getActiveFile())
+const currentPage = computed(() => textReaderStore.getReadingPosition(filePath.value)?.currentPage ?? 0)
+const totalPages = computed(() => textReaderStore.getTotalPages(filePath.value))
 
 const ttsEngine = ref<TTSEngine>(getDefaultEngine())
 
@@ -141,24 +138,24 @@ function setTTSEngine(val: TTSEngine) {
 }
 
 function onEncodingChange(encoding: string) {
-  textReaderStore.setEncodingSettings(filePath, { selectedEncoding: encoding })
-  onEncodingChangeCallback(encoding)
+  textReaderStore.setEncodingSettings(filePath.value, { selectedEncoding: encoding })
+  textReaderStore.onEncodingChange(filePath.value)
 }
 
 function nextPage() {
   if (currentPage.value < totalPages.value - 1) {
-    goToPage(currentPage.value + 1)
+    textReaderStore.goToPage(filePath.value, currentPage.value + 1)
   }
 }
 
 function prevPage() {
   if (currentPage.value > 0) {
-    goToPage(currentPage.value - 1)
+    textReaderStore.goToPage(filePath.value, currentPage.value - 1)
   }
 }
 
-function toggleAudio() {
-  toggleAudioFn()
+async function toggleAudio() {
+  await textReaderStore.toggleAudio(filePath.value)
 }
 
 function toggleControls() {

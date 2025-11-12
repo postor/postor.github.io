@@ -33,6 +33,17 @@ export interface ITTSManager {
   getVoices(engine?: TTSEngine): Promise<TTSVoice[]>
   predict(options: TTSPredictOptions): Promise<Blob>
   stream(text: string, voiceId?: string): AsyncGenerator<TTSStreamChunk, void, unknown>
+  // High-level helpers tuned for reader use-cases
+  // Fetch a single audio blob for a sentence. Accepts AbortSignal for cancellation.
+  fetchAudioForSentence(options: { text: string; voiceId?: string; engine?: TTSEngine; speed?: number; signal?: AbortSignal }): Promise<Blob>
+  // Convenience: return an object URL for the fetched audio and track it for later revocation
+  fetchAudioUrlForSentence(options: { text: string; voiceId?: string; engine?: TTSEngine; speed?: number; signal?: AbortSignal }): Promise<string>
+  // Release a previously created object URL (revokes it and forgets it)
+  releaseAudioUrl(url: string): void
+  // Revoke and clear all tracked object URLs
+  clearAudioUrls(): void
+  // Optional bulk prefetch helper for reader buffer windows
+  prefetch?(sentences: string[], startIndex?: number, bufferSize?: number): Promise<void>
   setDefaultEngine(engine: TTSEngine): void
   getDefaultEngine(): TTSEngine
   isInitialized(): boolean

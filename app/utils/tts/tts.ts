@@ -9,6 +9,11 @@ export {
   getVoices,
   predict,
   streamTTS,
+  fetchAudioForSentence,
+  fetchAudioUrlForSentence,
+  releaseAudioUrl,
+  clearAudioUrls,
+  prefetch,
   setDefaultEngine,
   getDefaultEngine,
 } from './manager'

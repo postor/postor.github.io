@@ -1,15 +1,15 @@
 
 <template>
   <div class="fixed inset-0 flex flex-col" :style="{ top: headerHeight + 'px', bottom: footerHeight + 'px' }">
-    <div v-if="filePath" class="flex-1 overflow-y-auto">
-      <ReadText :file-path="filePath" />
+    <div v-if="activeFile" class="flex-1 overflow-y-auto">
+      <ReadText />
     </div>
     <div v-else class="text-gray-400 p-4">{{ t('bookReading.noBookSelected') }}</div>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import ReadText from '~/components/read/read-text.vue'
 import { useBookReadingStore } from '~/stores/useBookReadingStore'
@@ -19,29 +19,31 @@ const route = useRoute()
 const { t } = useI18n()
 const store = useBookReadingStore()
 const textReaderStore = useTextReaderStore()
-const filePath = ref<string>('')
+const activeFile = computed(() => textReaderStore.getActiveFile())
 const headerHeight = ref(56) // Default h-14 = 56px
 const footerHeight = ref(56) // Default h-14 = 56px
 
 onMounted(() => {
   // Get file path from query parameter, or use current book from store
   const fileParam = route.query.file
+  let fp = ''
   if (fileParam && typeof fileParam === 'string') {
-    filePath.value = fileParam
+    fp = fileParam
   } else if (store.currentBook) {
-    filePath.value = store.currentBook.filePath
+    fp = store.currentBook.filePath
   }
 
-  // If opened via ?file=... then ensure the book store is aware of the current file
-  if (filePath.value) {
-    if (!store.currentBook || store.currentBook.filePath !== filePath.value) {
-      const fileName = filePath.value.split('/').pop() || filePath.value
-      const currentPos = textReaderStore.loadReadingPosition(filePath.value)
+  if (fp) {
+    textReaderStore.setActiveFile(fp)
+    // Ensure the book store is aware of the current file
+    if (!store.currentBook || store.currentBook.filePath !== fp) {
+      const fileName = fp.split('/').pop() || fp
+      const currentPos = textReaderStore.loadReadingPosition(fp)
       const currentPage = currentPos?.currentPage ?? 0
       const book = {
-        id: filePath.value,
+        id: fp,
         title: fileName,
-        filePath: filePath.value,
+        filePath: fp,
         total: 0,
         current: currentPage,
         lastRead: Date.now(),
