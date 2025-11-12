@@ -33,6 +33,9 @@ const error = computed(() => textReaderStore.getError(activeFile.value))
 // Drive UI directly from store where needed
 const lastScrollY = ref(0)
 const currentSentenceGlobal = computed(() => textReaderStore.getReadingPosition(activeFile.value)?.currentSentenceIndex ?? -1)
+// Prevent scroll-triggered auto hide/show right after controls expand/collapse
+const ignoreScroll = ref(false)
+let ignoreScrollTimer: number | undefined
 
 // filePath now accessed directly from the store in child components; provide removed
 
@@ -62,6 +65,11 @@ function handleScroll() {
   if (!scrollContainer) return
 
   const currentScrollY = scrollContainer.scrollTop
+  // If controls just changed, ignore scroll-driven toggles briefly to avoid flicker
+  if (ignoreScroll.value) {
+    lastScrollY.value = currentScrollY
+    return
+  }
   const scrollThreshold = 100
   const scrollDelta = Math.abs(currentScrollY - lastScrollY.value)
 
@@ -137,6 +145,19 @@ watch(
     if (typeof idx === 'number' && idx !== old) {
       scrollToCurrentSentence()
     }
+  }
+)
+
+// When controls expand/collapse (by button or via store), ignore subsequent scroll
+// events for a short time window to prevent immediate auto-hide/show loops.
+watch(
+  () => textReaderStore.preferences.controlsExpanded,
+  () => {
+    ignoreScroll.value = true
+    if (ignoreScrollTimer) window.clearTimeout(ignoreScrollTimer)
+    ignoreScrollTimer = window.setTimeout(() => {
+      ignoreScroll.value = false
+    }, 500)
   }
 )
 
