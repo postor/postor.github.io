@@ -34,11 +34,11 @@ onMounted(() => {
   }
 
   if (fp) {
-    textReaderStore.setActiveFile(fp)
+    textReaderStore.activeFilePath = fp
     // Ensure the book store is aware of the current file
     if (!store.currentBook || store.currentBook.filePath !== fp) {
       const fileName = fp.split('/').pop() || fp
-      const currentPos = textReaderStore.loadReadingPosition(fp)
+  const currentPos = textReaderStore.ensureReadingPosition(fp)
       const currentPage = currentPos?.currentPage ?? 0
       const book = {
         id: fp,

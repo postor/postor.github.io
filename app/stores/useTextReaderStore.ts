@@ -34,17 +34,18 @@ export interface AudioState {
 
 interface State {
   preferences: TextReaderPreferences
-  encodingSettings: Record<string, EncodingSettings>
+  encodingSettings: EncodingSettings
   readingPositions: Record<string, ReadingPosition>
   audioState: AudioState
-  fileData: Record<string, {
+  fileData: {
     raw?: Uint8Array
     text: string
     isSessionReady: boolean
     sentences: string[]
-  }>
-  ui: Record<string, { loading: boolean; error: string }>
+  }
+  ui: { loading: boolean; error: string }
   activeFilePath: string
+  lastLoadedFilePath?: string
 }
 
 export const useTextReaderStore = defineStore('textReader', {
@@ -56,20 +57,21 @@ export const useTextReaderStore = defineStore('textReader', {
       linesPerPage: 20,
       ttsSpeed: 1,
     },
-    encodingSettings: {},
+    encodingSettings: { selectedEncoding: 'auto', detectedEncoding: '' },
     readingPositions: {},
     audioState: {
       isPlaying: false,
       isLoadingAudio: false,
     },
-    fileData: {},
+    fileData: { text: '', isSessionReady: false, sentences: [] },
     activeFilePath: '',
-    ui: {},
+    lastLoadedFilePath: undefined,
+    ui: { loading: false, error: '' },
   }),
 
   getters: {
     getText: (state) => (filePath: string) => {
-      return state.fileData[filePath]?.text || ''
+      return state.fileData.text || ''
     },
 
     getReadingPosition: (state) => (filePath: string) => {
@@ -77,7 +79,7 @@ export const useTextReaderStore = defineStore('textReader', {
     },
 
     getEncodingSettings: (state) => (filePath: string) => {
-      return state.encodingSettings[filePath] || {
+      return state.encodingSettings || {
         selectedEncoding: 'auto',
         detectedEncoding: '',
       }
@@ -86,7 +88,7 @@ export const useTextReaderStore = defineStore('textReader', {
     getPages(): (filePath: string) => string[] {
       return (filePath: string) => {
         return paginateText(
-          (this.fileData[filePath]?.text as string) || '',
+          (this.fileData?.text as string) || '',
           this.preferences.linesPerPage
         )
       }
@@ -95,7 +97,7 @@ export const useTextReaderStore = defineStore('textReader', {
     getPageSentenceMeta(): (filePath: string) => Array<{ offset: number; count: number }> {
       return (filePath: string) => {
         const pages = paginateText(
-          (this.fileData[filePath]?.text as string) || '',
+          (this.fileData?.text as string) || '',
           this.preferences.linesPerPage
         )
         return getPageSentenceMeta(pages)
@@ -105,7 +107,7 @@ export const useTextReaderStore = defineStore('textReader', {
     getTotalPages(): (filePath: string) => number {
       return (filePath: string) => {
         const pages = paginateText(
-          (this.fileData[filePath]?.text as string) || '',
+          (this.fileData?.text as string) || '',
           this.preferences.linesPerPage
         )
         return pages.length || 1
@@ -115,7 +117,7 @@ export const useTextReaderStore = defineStore('textReader', {
     getCurrentPageContent(): (filePath: string) => string {
       return (filePath: string) => {
         const pages = paginateText(
-          (this.fileData[filePath]?.text as string) || '',
+          (this.fileData?.text as string) || '',
           this.preferences.linesPerPage
         )
         const position = this.readingPositions[filePath]
@@ -129,11 +131,11 @@ export const useTextReaderStore = defineStore('textReader', {
     },
 
     isLoading: (state) => (filePath: string) => {
-      return !!state.ui[filePath]?.loading
+      return !!state.ui?.loading
     },
 
     getError: (state) => (filePath: string) => {
-      return state.ui[filePath]?.error || ''
+      return state.ui?.error || ''
     },
   },
 
@@ -142,29 +144,12 @@ export const useTextReaderStore = defineStore('textReader', {
   },
 
   actions: {
-    // Active file
-    setActiveFile(filePath: string) {
-      this.activeFilePath = filePath || ''
-    },
+    // Active file: mutate activeFilePath directly; retained getter function only if needed
     getActiveFile() {
       return this.activeFilePath
     },
     // Preferences management
-    setFontSize(size: number) {
-      this.preferences.fontSize = size
-    },
-
-    setControlsExpanded(expanded: boolean) {
-      this.preferences.controlsExpanded = expanded
-    },
-
-    setAutoMode(auto: boolean) {
-      this.preferences.autoMode = auto
-    },
-
-    setLinesPerPage(lines: number) {
-      this.preferences.linesPerPage = lines
-    },
+    // Removed trivial setters; mutate state directly from components/actions
 
     updatePreferences(prefs: Partial<TextReaderPreferences>) {
       this.preferences = { ...this.preferences, ...prefs }
@@ -173,8 +158,8 @@ export const useTextReaderStore = defineStore('textReader', {
 
     // Encoding settings management
     setEncodingSettings(filePath: string, settings: Partial<EncodingSettings>) {
-      this.encodingSettings[filePath] = {
-        ...(this.encodingSettings[filePath] || { selectedEncoding: 'auto', detectedEncoding: '' }),
+      this.encodingSettings = {
+        ...(this.encodingSettings || { selectedEncoding: 'auto', detectedEncoding: '' }),
         ...settings,
       }
     },
@@ -224,13 +209,7 @@ export const useTextReaderStore = defineStore('textReader', {
     },
 
     // Audio state management
-    setAudioPlaying(playing: boolean) {
-      this.audioState.isPlaying = playing
-    },
-
-    setAudioLoading(loading: boolean) {
-      this.audioState.isLoadingAudio = loading
-    },
+    // Removed trivial audio setters; mutate audioState directly
 
     updateAudioState(state: Partial<AudioState>) {
       this.audioState = { ...this.audioState, ...state }
@@ -238,9 +217,14 @@ export const useTextReaderStore = defineStore('textReader', {
 
     // Cleanup
     clearFileData(filePath: string) {
-      delete this.readingPositions[filePath]
-      delete this.encodingSettings[filePath]
-      delete this.ui[filePath]
+      // Clear persisted reading position for that file
+      if (filePath) delete this.readingPositions[filePath]
+      // If clearing current file or no file specified, reset top-level states
+      if (!filePath || filePath === this.activeFilePath) {
+        this.fileData = { text: '', isSessionReady: false, sentences: [] }
+        this.ui = { loading: false, error: '' }
+        this.encodingSettings = { selectedEncoding: 'auto', detectedEncoding: '' }
+      }
     },
 
     // Initialize store
@@ -253,6 +237,17 @@ export const useTextReaderStore = defineStore('textReader', {
           bufferSize: 5,
           fetcher: ttsFetcher,
           events: {
+            onSentenceChange: (index: number) => {
+              const bookStore = useBookReadingStore()
+              const filePath = bookStore.currentBook?.id
+              if (!filePath) return
+              const page = this.findPageForSentence(filePath, index)
+              this.updateReadingPosition(filePath, {
+                currentPage: page,
+                currentSentenceIndex: index,
+              })
+              this.updateBookProgress(filePath)
+            },
             onSentenceStart: (index: number) => {
               // We don't know which file is active from the manager; we assume currentBook id
               const bookStore = useBookReadingStore()
@@ -276,18 +271,18 @@ export const useTextReaderStore = defineStore('textReader', {
               this.updateBookProgress(filePath)
             },
             onQueueComplete: () => {
-              this.setAudioPlaying(false)
-              this.setAudioLoading(false)
+              this.audioState.isPlaying = false
+              this.audioState.isLoadingAudio = false
             },
             onError: () => {
-              this.setAudioPlaying(false)
-              this.setAudioLoading(false)
+              this.audioState.isPlaying = false
+              this.audioState.isLoadingAudio = false
             },
             onAudioPlay: () => {
-              this.setAudioPlaying(true)
+              this.audioState.isPlaying = true
             },
             onAudioPause: () => {
-              this.setAudioPlaying(false)
+              this.audioState.isPlaying = false
             },
           }
         })
@@ -299,7 +294,7 @@ export const useTextReaderStore = defineStore('textReader', {
     // Encoding helpers now in utils
     detectEncoding(data: Uint8Array): string { return detectEncodingFromBytes(data) },
     decodeFile(filePath: string, data: Uint8Array): string {
-      const settings = this.encodingSettings[filePath] || { selectedEncoding: 'auto', detectedEncoding: '' }
+      const settings = this.encodingSettings || { selectedEncoding: 'auto', detectedEncoding: '' }
       let encoding = settings.selectedEncoding || 'auto'
       if (encoding === 'auto') {
         encoding = detectEncodingFromBytes(data)
@@ -311,25 +306,28 @@ export const useTextReaderStore = defineStore('textReader', {
     },
 
     // Simple UI helpers scoped per file
-    setLoading(filePath: string, loading: boolean) {
-      this.ui[filePath] = this.ui[filePath] || { loading: false, error: '' }
-      this.ui[filePath].loading = loading
-    },
-
-    setError(filePath: string, message: string) {
-      this.ui[filePath] = this.ui[filePath] || { loading: false, error: '' }
-      this.ui[filePath].error = message
-    },
+    // Removed trivial UI setters; access ui map directly
 
     async loadFile(filePath: string) {
       // If caller passes empty, try active
       if (!filePath) filePath = this.activeFilePath
       if (!filePath) throw new Error('No file selected')
-      this.setLoading(filePath, true)
-      this.setError(filePath, '')
+
+      // If switching files (based on last loaded), reset top-level state
+      if (this.lastLoadedFilePath !== filePath) {
+        this.fileData = { text: '', isSessionReady: false, sentences: [] }
+        this.ui = { loading: false, error: '' }
+        this.encodingSettings = { selectedEncoding: 'auto', detectedEncoding: '' }
+        this.lastLoadedFilePath = filePath
+      }
+      // Always set active file for UI
+      this.activeFilePath = filePath
+
+      this.ui.loading = true
+      this.ui.error = ''
       // Reset audio state for new file
-      this.setAudioPlaying(false)
-      this.setAudioLoading(false)
+      this.audioState.isPlaying = false
+      this.audioState.isLoadingAudio = false
       try {
         const opfs = await import('~/utils/opfs')
         const content = await opfs.readFile(filePath)
@@ -344,15 +342,11 @@ export const useTextReaderStore = defineStore('textReader', {
           data = new Uint8Array(content as Uint8Array)
         }
 
-        this.fileData[filePath] = this.fileData[filePath] || { text: '', isSessionReady: false, sentences: [] }
-        // Ensure container exists before assignment (TS narrowing)
-        const fileEntry = this.fileData[filePath] || { text: '', isSessionReady: false, sentences: [] }
-        fileEntry.raw = data
-        this.fileData[filePath] = fileEntry
+        // Write raw data
+        this.fileData.raw = data
 
         const decoded = this.decodeFile(filePath, data)
-        // fileEntry is guaranteed non-undefined now
-        this.fileData[filePath]!.text = decoded
+        this.fileData.text = decoded
 
         const position = this.ensureReadingPosition(filePath)
         await this.ensureReaderSession(filePath, position)
@@ -374,26 +368,25 @@ export const useTextReaderStore = defineStore('textReader', {
         }
       } catch (err) {
         console.error('Error loading file in store:', err)
-        this.setError(filePath, (err as Error)?.message || 'Failed to load file')
+        this.ui.error = (err as Error)?.message || 'Failed to load file'
         throw err
       }
       finally {
-        this.setLoading(filePath, false)
+        this.ui.loading = false
       }
     },
 
     async ensureReaderSession(filePath: string, position?: ReadingPosition) {
       const text = this.getText(filePath)
       const sentences = splitIntoSentences(text || '')
-      this.fileData[filePath] = this.fileData[filePath] || { text: '', isSessionReady: false, sentences: [] }
-      this.fileData[filePath].sentences = sentences
+      this.fileData.sentences = sentences
 
       const readerManager = getReaderManager()
 
       const total = sentences.length
       if (!total) {
         readerManager.loadSession({ id: filePath, sentences })
-        this.fileData[filePath].isSessionReady = true
+        this.fileData.isSessionReady = true
         return
       }
 
@@ -406,45 +399,45 @@ export const useTextReaderStore = defineStore('textReader', {
       }
 
       readerManager.loadSession({ id: filePath, sentences, startIndex })
-      this.fileData[filePath].isSessionReady = true
+      this.fileData.isSessionReady = true
     },
 
     getSentenceIndexForPage(filePath: string, page: number) {
-      const pages = paginateText((this.fileData[filePath]?.text as string) || '', this.preferences.linesPerPage)
+      const pages = paginateText((this.fileData?.text as string) || '', this.preferences.linesPerPage)
       const metaList = getPageSentenceMeta(pages)
       return getSentenceIndexForPageUtil(metaList, page)
     },
 
     findPageForSentence(filePath: string, index: number) {
       const fallback = this.readingPositions[filePath]?.currentPage ?? 0
-      const pages = paginateText((this.fileData[filePath]?.text as string) || '', this.preferences.linesPerPage)
+      const pages = paginateText((this.fileData?.text as string) || '', this.preferences.linesPerPage)
       const metaList = getPageSentenceMeta(pages)
       return findPageForSentenceUtil(metaList, index, fallback)
     },
 
     async toggleAudio(filePath: string) {
-      const fileState = this.fileData[filePath]
+      const fileState = this.fileData
       if (!fileState?.isSessionReady || !fileState.sentences.length) return
 
       const readerManager = getReaderManager()
       const nowPlaying = this.audioState.isPlaying
 
       if (nowPlaying) {
-        this.setAudioPlaying(false)
+        this.audioState.isPlaying = false
         try {
           readerManager.pause({ finishSentence: true })
         } catch (_) { }
         return
       }
 
-      this.setAudioPlaying(true)
+      this.audioState.isPlaying = true
 
       const fallbackIndex = Math.max(this.getSentenceIndexForPage(filePath, this.getReadingPosition(filePath)?.currentPage ?? 0), 0)
       const currentIndex = this.getReadingPosition(filePath)?.currentSentenceIndex ?? -1
       const startIndex = currentIndex >= 0 ? currentIndex : fallbackIndex
 
       try {
-        this.setAudioLoading(true)
+        this.audioState.isLoadingAudio = true
         if (readerManager.getCurrentIndex() >= 0) {
           await readerManager.resume()
         } else {
@@ -452,9 +445,9 @@ export const useTextReaderStore = defineStore('textReader', {
         }
       } catch (err) {
         console.error('Audio playback error (store):', err)
-        this.setAudioPlaying(false)
+        this.audioState.isPlaying = false
       } finally {
-        this.setAudioLoading(false)
+        this.audioState.isLoadingAudio = false
       }
     },
 
@@ -489,11 +482,11 @@ export const useTextReaderStore = defineStore('textReader', {
     },
 
     async onEncodingChange(filePath: string) {
-      const raw = this.fileData[filePath]?.raw
+      const raw = this.fileData?.raw
       if (!raw) return
       const decoded = this.decodeFile(filePath, raw)
-      this.fileData[filePath] = this.fileData[filePath] || { text: '', isSessionReady: false, sentences: [] }
-      this.fileData[filePath].text = decoded
+      this.fileData = this.fileData || { text: '', isSessionReady: false, sentences: [] }
+      this.fileData.text = decoded
       // reset position
       this.readingPositions[filePath] = {
         filePath,

@@ -12,6 +12,8 @@ export interface ReaderSession {
 export interface ReaderEvents {
   onSentenceStart?: (index: number, sentence: string) => void
   onSentenceEnd?: (index: number, sentence: string) => void
+  // Fired whenever the current sentence index changes (seek, load, auto-advance)
+  onSentenceChange?: (index: number, sentence: string) => void
   onQueueComplete?: () => void
   onError?: (error: unknown) => void
   onAudioPlay?: () => void
@@ -107,7 +109,7 @@ class ReaderManager {
     this.currentSession = { ...session }
     this.sessionToken = Symbol(session.id)
     if (typeof session.startIndex === 'number') {
-      this.currentIndex = session.startIndex
+      this.setCurrentIndex(session.startIndex)
       // Don't prefetch automatically - wait for user to start playing
     } else {
       this.currentIndex = -1
@@ -125,7 +127,7 @@ class ReaderManager {
       return
     }
     const clamped = this.clampIndex(index)
-    this.currentIndex = clamped
+    this.setCurrentIndex(clamped)
     // Do not prefetch on seek; wait until user explicitly plays
   }
 
@@ -266,7 +268,7 @@ class ReaderManager {
     if (this.paused && this.pauseAfterCurrent) {
       // Prepare to start from next sentence on resume
       if (this.currentSession && nextIdx < this.currentSession.sentences.length) {
-        this.currentIndex = nextIdx
+        this.setCurrentIndex(nextIdx)
       }
       return
     }
@@ -276,7 +278,7 @@ class ReaderManager {
       return
     }
 
-    this.currentIndex = nextIdx
+    this.setCurrentIndex(nextIdx)
     void this.playCurrent()
   }
 
@@ -303,7 +305,7 @@ class ReaderManager {
 
     const sentence = this.getSentence(index)
     if (!sentence || !sentence.trim()) {
-      this.currentIndex = index + 1
+      this.setCurrentIndex(index + 1)
       if (this.currentIndex < this.currentSession.sentences.length) {
         await this.playCurrent()
       } else {
@@ -416,7 +418,7 @@ class ReaderManager {
         this.events.onQueueComplete?.()
         return
       }
-      this.currentIndex = nextIdx
+      this.setCurrentIndex(nextIdx)
       await this.playCurrent()
     } catch (err) {
       this.events.onError?.(err)
@@ -505,6 +507,17 @@ class ReaderManager {
       }
     }
     this.buffer.delete(index)
+  }
+
+  private setCurrentIndex(index: number) {
+    const clamped = this.clampIndex(index)
+    this.currentIndex = clamped
+    const sentence = this.getSentence(clamped)
+    if (sentence) {
+      try {
+        this.events.onSentenceChange?.(clamped, sentence)
+      } catch (_) { }
+    }
   }
 }
 

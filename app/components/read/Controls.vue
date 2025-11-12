@@ -50,7 +50,7 @@
             <span>{{ t('bookReading.fontSize') }}:</span>
             <select
               :value="textReaderStore.preferences.fontSize"
-              @change="(e) => textReaderStore.setFontSize(Number((e.target as HTMLSelectElement).value))"
+              @change="(e) => (textReaderStore.preferences.fontSize = Number((e.target as HTMLSelectElement).value))"
               class="px-2 py-1 border rounded bg-white border-neutral-300 dark:bg-neutral-800 dark:border-neutral-600 dark:text-neutral-200"
             >
               <option value="14">14px</option>
@@ -159,6 +159,6 @@ async function toggleAudio() {
 }
 
 function toggleControls() {
-  textReaderStore.setControlsExpanded(!textReaderStore.preferences.controlsExpanded)
+  textReaderStore.preferences.controlsExpanded = !textReaderStore.preferences.controlsExpanded
 }
 </script>

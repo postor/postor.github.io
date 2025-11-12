@@ -65,14 +65,14 @@ function handleScroll() {
   const scrollThreshold = 100
   const scrollDelta = Math.abs(currentScrollY - lastScrollY.value)
 
-  if (scrollDelta > 10) {
-    if (currentScrollY > lastScrollY.value && currentScrollY > scrollThreshold) {
+  if (scrollDelta > scrollThreshold) {
+    if (currentScrollY > lastScrollY.value) {
       if (textReaderStore.preferences.controlsExpanded) {
-        textReaderStore.setControlsExpanded(false)
+        textReaderStore.preferences.controlsExpanded = false
       }
     } else if (currentScrollY < lastScrollY.value) {
       if (!textReaderStore.preferences.controlsExpanded) {
-        textReaderStore.setControlsExpanded(true)
+        textReaderStore.preferences.controlsExpanded = true
       }
     }
 
@@ -90,11 +90,11 @@ function handleKeyPress(e: KeyboardEvent) {
     e.preventDefault()
     ;(async () => {
       try {
-        textReaderStore.setError(activeFile.value, '')
+        textReaderStore.ui.error = ''
         await textReaderStore.toggleAudio(activeFile.value)
       } catch (err) {
         console.error('Audio playback error:', err)
-        textReaderStore.setError(activeFile.value, t('bookReading.ttsError') || 'Failed to play audio')
+        textReaderStore.ui.error = t('bookReading.ttsError') || 'Failed to play audio'
       }
     })()
   }
