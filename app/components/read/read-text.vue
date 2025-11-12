@@ -8,7 +8,12 @@
     <div class="max-w-[800px] mx-auto p-8 leading-8 sm:p-4" :style="{ fontSize: textReaderStore.preferences.fontSize + 'px' }">
       <div v-if="loading" class="text-center p-8 text-base">{{ t('bookReading.loading') }}...</div>
       <div v-else-if="error" class="text-center p-8 text-base text-red-600 dark:text-red-400">{{ error }}</div>
-      <div v-else-if="textReaderStore.getCurrentPageContent(activeFile)" class="space-y-2" v-html="textReaderStore.getCurrentPageContent(activeFile)"></div>
+      <div
+        v-else-if="textReaderStore.getCurrentPageContent(activeFile)"
+        class="space-y-2"
+        v-html="textReaderStore.getCurrentPageContent(activeFile)"
+        @click="onContentClick"
+      ></div>
       <div v-else class="text-center p-8 text-base">{{ t('bookReading.noContent') }}</div>
     </div>
   </div>
@@ -20,6 +25,7 @@ import { useI18n } from 'vue-i18n'
 import Controls from './Controls.vue'
 import { useThemeStore } from '~/stores/useThemeStore'
 import { useTextReaderStore } from '~/stores/useTextReaderStore'
+import { getReaderManager } from '~/utils/reader/manager'
 
 // filePath prop removed; managed via store activeFilePath
 
@@ -108,6 +114,52 @@ function handleKeyPress(e: KeyboardEvent) {
   }
 }
 
+// Click-to-read-to: when audio is playing, seek to the clicked sentence; otherwise just move highlight
+async function onContentClick(e: MouseEvent) {
+  if (!activeFile.value) return
+  // Ignore if user is selecting text
+  const sel = window.getSelection?.()
+  if (sel && sel.toString().length > 0) return
+
+  const target = e.target as HTMLElement
+  const sentenceEl = target?.closest('[data-sentence-idx]') as HTMLElement | null
+  if (!sentenceEl) return
+  const idxAttr = sentenceEl.getAttribute('data-sentence-idx')
+  const idx = idxAttr ? parseInt(idxAttr, 10) : NaN
+  if (!Number.isFinite(idx)) return
+
+  // Update reading position and page
+  const page = textReaderStore.findPageForSentence(activeFile.value, idx)
+  textReaderStore.updateReadingPosition(activeFile.value, {
+    currentPage: page,
+    currentSentenceIndex: idx,
+  })
+
+  // If currently reading, jump playback to this sentence
+  if (textReaderStore.audioState.isPlaying) {
+    try {
+      const readerManager = getReaderManager()
+      // Stop current playback first, then start from new position
+      readerManager.stop()
+      await readerManager.playFrom(idx)
+    } catch (err) {
+      console.error('Failed to restart reader on click:', err)
+    }
+  } else {
+    // Not currently playing: start playback from the clicked sentence
+    try {
+      const readerManager = getReaderManager()
+      await readerManager.playFrom(idx)
+      // Optional: if user holds Shift, read only this one sentence
+      if ((e as MouseEvent).shiftKey) {
+        readerManager.pause({ finishSentence: true })
+      }
+    } catch (err) {
+      console.error('Failed to start reader on click:', err)
+    }
+  }
+}
+
 // Reader events are now handled in the store
 
 onMounted(() => {
@@ -184,5 +236,10 @@ watch(
 .dark .reading-sentence {
   background-color: rgba(255, 215, 0, 0.3);
   box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.15);
+}
+
+/* Make sentences clearly clickable */
+[data-sentence-idx] {
+  cursor: pointer;
 }
 </style>
