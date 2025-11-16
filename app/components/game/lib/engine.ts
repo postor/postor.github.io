@@ -19,15 +19,6 @@ export async function startGame(cfgPath: string | StartOptions) {
 
   const width = cfg.meta.viewport.width; const height = cfg.meta.viewport.height;
 
-  const parentEl = document.getElementById('game');
-  if (parentEl) {
-    parentEl.style.width = '100vw';
-    parentEl.style.height = '100vh';
-    parentEl.style.maxWidth = '100vw';
-    parentEl.style.maxHeight = '100vh';
-    parentEl.style.margin = '0 auto';
-    parentEl.style.display = 'block';
-  }
 
   let currentSceneKey: string | number | null = cfg.meta.startScene || null;
   let currentSceneData: SceneConfig | null = null;
@@ -38,8 +29,10 @@ export async function startGame(cfgPath: string | StartOptions) {
     backgroundColor: (cfg.meta.backgroundColor || '#000000') as any,
     parent: 'game',
     scale: {
+      // FIT works, but autoCenter will set canvas margin styles which we don't want.
+      // Use NO_CENTER so CSS can control canvas centering and remove inline margin.
       mode: Phaser.Scale.FIT,
-      autoCenter: Phaser.Scale.CENTER_BOTH,
+      autoCenter: Phaser.Scale.NO_CENTER,
       width,
       height
     },
@@ -67,6 +60,49 @@ export async function startGame(cfgPath: string | StartOptions) {
   }
 
   function create(this: PhaserNS.Scene) {
+    phaserScene = this; // ensure scene reference is set in create
+
+    // Clear inline styles on parent container (#game) that some runtimes may set
+    // (The build/compiled code previously inserted container styles like width/height/margin.)
+    try {
+      const containerEl = document.getElementById('game');
+      if (containerEl) {
+        containerEl.style.width = '';
+        containerEl.style.height = '';
+        containerEl.style.maxWidth = '';
+        containerEl.style.maxHeight = '';
+        containerEl.style.margin = '';
+        containerEl.style.display = '';
+      }
+    } catch (e) {
+      // ignore in non-browser environments
+    }
+
+    // Clear any inline styles automatically set on the canvas, so our CSS controls its sizing.
+    const clearCanvasInlineStyles = () => {
+      try {
+        const canvas = (this.game.canvas as HTMLCanvasElement | null) || null;
+        if (canvas) {
+          canvas.style.width = '';
+          canvas.style.height = '';
+          canvas.style.marginLeft = '';
+          canvas.style.marginTop = '';
+          canvas.style.maxWidth = '';
+          canvas.style.maxHeight = '';
+        }
+      } catch (e) { /* ignore */ }
+    };
+
+    // Clear once on create
+    clearCanvasInlineStyles();
+
+    // Also clear on any Phaser resize events (Phaser sets inline sizes and margins on resize/center).
+    try {
+      this.scale.off('resize', (this as any).__clearInlineStylesHandler);
+      (this as any).__clearInlineStylesHandler = clearCanvasInlineStyles;
+      this.scale.on('resize', (this as any).__clearInlineStylesHandler);
+    } catch (e) { /* ignore */ }
+
     if (currentSceneKey != null) goToScene(currentSceneKey);
   }
 
