@@ -6,11 +6,13 @@ import { loadGameConfig, resolveResourceUrl } from './loader';
 
 interface StartOptions {
   cfgPath: string; // folder containing config.json and assets
+  onBack?: () => void | Promise<void>;
 }
 
 export async function startGame(cfgPath: string | StartOptions) {
   const Phaser = (await import('phaser')).default as typeof PhaserNS;
   const cfgBase = typeof cfgPath === 'string' ? cfgPath : cfgPath.cfgPath;
+  const onBackCallback = (typeof cfgPath === 'object' && (cfgPath as StartOptions).onBack) ? (cfgPath as StartOptions).onBack : undefined;
   const { cfg, base } = await loadGameConfig(cfgBase);
 
   const gameState: GameState = createInitialState();
@@ -197,7 +199,145 @@ export async function startGame(cfgPath: string | StartOptions) {
     phaserScene.scale.on('resize', (gameState as any).__resizeHandler);
   }
 
+  function hasNavigationInSteps(steps?: Step[]): boolean {
+    if (!steps || steps.length === 0) return false;
+    for (const step of steps) {
+      const act = (step as any).act as string;
+      const args = (step as any).args || {};
+      if (act === 'go' || act === 'goScene') return true;
+      if (act === 'options' && Array.isArray(args.items)) {
+        for (const it of args.items) {
+          if (it.goScene != null || it.go != null) return true;
+          if (it.steps && hasNavigationInSteps(it.steps)) return true;
+        }
+      }
+      if (act === 'choice' && Array.isArray(args.options)) {
+        for (const it of args.options) {
+          if (it.goScene != null || it.go != null) return true;
+          if (it.steps && hasNavigationInSteps(it.steps)) return true;
+        }
+      }
+      if (act === 'if') {
+        if (args.then && hasNavigationInSteps(args.then)) return true;
+        if (args.else && hasNavigationInSteps(args.else)) return true;
+      }
+      // Generic nested steps on custom acts
+      if (args.steps && hasNavigationInSteps(args.steps)) return true;
+    }
+    return false;
+  }
+
+  function resourcesHaveNavigation(resources?: Record<string, Partial<Resource>>): boolean {
+    if (!resources) return false;
+    for (const [, res] of Object.entries(resources)) {
+      if (!res) continue;
+      if ((res as any).type === 'button') {
+        const btn = (res as any).button || {};
+        if (btn.goScene != null || btn.go != null) return true;
+        if (btn.onClick && hasNavigationInSteps(btn.onClick)) return true;
+      }
+    }
+    return false;
+  }
+
+  function isTerminalScene(sceneKey: string | number | null, sceneCfg: SceneConfig | null) {
+    if (sceneKey === 'end') return true;
+  if ((sceneCfg as any)?.end === true) return true;
+  if ((sceneCfg as any)?.meta?.end === true) return true;
+    // If any steps or resources contain navigation, scene is NOT terminal
+    if (hasNavigationInSteps(sceneCfg?.steps)) return false;
+    if (resourcesHaveNavigation(sceneCfg?.resources)) return false;
+    // If there are no steps and no navigation resources, treat as terminal
+    if (!sceneCfg?.steps || sceneCfg.steps.length === 0) return true;
+    // Otherwise it's terminal if we didn't find navigation
+    return true;
+  }
+
+  function showEndCenterButton() {
+    if (!phaserScene) return;
+    if (gameState.objects['__ui_center_back']) return; // avoid duplicates
+    // place the button at center of the screen
+    const w = phaserScene.scale.width; const h = phaserScene.scale.height;
+    const style: PhaserNS.Types.GameObjects.Text.TextStyle = { fontFamily: 'Arial', fontSize: '36px', color: '#ffffff', backgroundColor: 'rgba(0,0,0,0.5)', padding: { left: 12, right: 12, top: 8, bottom: 8 } } as any;
+  const btn = phaserScene.add.text(Math.round(w / 2), Math.round(h / 2), '\u21BA', style);
+    btn.setOrigin(0.5, 0.5);
+    btn.setDepth(10001);
+    btn.setScrollFactor(0);
+    btn.setInteractive({ useHandCursor: true });
+    btn.on('pointerdown', async () => {
+      if (onBackCallback) {
+        try {
+          await onBackCallback();
+        } catch (e) { console.error('onBack callback failed', e); }
+      } else {
+        const target = resolveSceneTarget(-1);
+        goToScene(target);
+      }
+    });
+    addUiObject('center_back', btn);
+    return btn;
+  }
+
+  function restartGame() {
+    if (!phaserScene) return;
+    try { phaserScene.sound?.stopAll(); } catch { }
+    // destroy all current objects
+    Object.entries(gameState.objects).forEach(([k, obj]) => {
+      if (!k || k.startsWith('__ui_')) return; // let clearUiLayer handle UI
+      try { (obj as any)?.destroy?.(); } catch { }
+      delete gameState.objects[k];
+    });
+    clearUiLayer();
+    Object.entries(gameState.hud).forEach(([k, hud]) => {
+      try { (hud as any)?.destroy?.(); } catch { }
+      delete gameState.hud[k];
+    });
+    // reset attrs and history
+    gameState.attrs = { global: {}, game: {} } as any;
+    gameState.sceneHistory = [];
+    // clear Phaser scene children
+    try { phaserScene.children.removeAll(); } catch { }
+    currentSceneKey = null; currentSceneData = null;
+    const startKey = (cfg.meta && cfg.meta.startScene) ? cfg.meta.startScene : null;
+    if (startKey != null) {
+      goToScene(startKey as any);
+    }
+  }
+
+  function showEndCenterButtons() {
+    if (!phaserScene) return;
+    if (gameState.objects['__ui_center_back'] || gameState.objects['__ui_center_restart']) return;
+    const w = phaserScene.scale.width; const h = phaserScene.scale.height;
+    const style: PhaserNS.Types.GameObjects.Text.TextStyle = { fontFamily: 'Arial', fontSize: '28px', color: '#ffffff', backgroundColor: 'rgba(0,0,0,0.6)', padding: { left: 12, right: 12, top: 8, bottom: 8 } } as any;
+    const spacing = 16; const btnW = 160; const totalW = btnW * 2 + spacing;
+    const x0 = Math.round(w / 2 - totalW / 2);
+    const y0 = Math.round(h / 2);
+    const backBtn = phaserScene.add.text(x0, y0, 'Back', style);
+    backBtn.setOrigin(0, 0.5);
+    backBtn.setDepth(10001);
+    backBtn.setScrollFactor(0);
+    backBtn.setInteractive({ useHandCursor: true });
+    backBtn.on('pointerdown', async () => {
+      if (onBackCallback) {
+        try { await onBackCallback(); } catch (e) { console.error('onBack callback failed', e); }
+      } else {
+        const target = resolveSceneTarget(-1);
+        goToScene(target);
+      }
+    });
+    addUiObject('center_back', backBtn);
+
+    const restartBtn = phaserScene.add.text(x0 + btnW + spacing, y0, 'Restart', style);
+    restartBtn.setOrigin(0, 0.5);
+    restartBtn.setDepth(10001);
+    restartBtn.setScrollFactor(0);
+    restartBtn.setInteractive({ useHandCursor: true });
+    restartBtn.on('pointerdown', () => restartGame());
+    addUiObject('center_restart', restartBtn);
+  }
+
   async function runSteps(steps: Step[]) {
+    const startSceneWhenRun = currentSceneKey;
     for (const step of steps) {
       const loopTimes = (step as any).loop?.times || 1;
       let i = 0;
@@ -215,6 +355,11 @@ export async function startGame(cfgPath: string | StartOptions) {
         i++;
         if ((step as any).loop?.until && matchCondition(gameState, 'game', (step as any).loop.until)) break;
       } while (i < loopTimes);
+    }
+    // after finishing these steps, if still in the same scene and the scene is an end scene, show a center back button
+    const isTerminal = isTerminalScene(currentSceneKey, currentSceneData);
+    if (startSceneWhenRun === currentSceneKey && isTerminal) {
+      showEndCenterButtons();
     }
   }
 

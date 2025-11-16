@@ -11,7 +11,9 @@ const props = defineProps<{ cfg: string }>()
 
 onMounted(() => {
   // `cfg` is now a path to a folder containing config.json and assets
-  startGame(props.cfg)
+  startGame({ cfgPath: props.cfg,onBack:()=>{
+    navigateTo('/learn-game')
+  } })
 })
 </script>
 
