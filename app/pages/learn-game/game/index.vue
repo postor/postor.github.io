@@ -1,7 +1,5 @@
 <template>
-  <ClientOnly>
-    <LazyGame :cfg="'/learn-game' + cfg"></LazyGame>
-  </ClientOnly>
+  <iframe :src="cfg" class="w-screen h-screen" />
 </template>
 
 <script setup lang="ts">
@@ -12,7 +10,7 @@ definePageMeta({
 import { ref, onMounted } from 'vue'
 
 // Fallback value used during SSR and when no search param provided
-const cfg = ref('/02-zhanguoce/01-qin/01-shangyang/')
+const cfg = ref('/learn-game/01-zhanguoce/02-qin/01-weiyangwangweiruqin')
 
 // Read `cfg` from the URL search params on the client and update `cfg`.
 onMounted(() => {

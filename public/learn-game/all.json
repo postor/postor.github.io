@@ -3,37 +3,37 @@
     {
       "id": 10001,
       "title": "东周1 秦兴师临周而求九鼎[代]",
-      "path": "/01-zhanguoce/02-qin/01-shangyang/",
+      "path": "/learn-game/01-zhanguoce/02-qin/01-weiyangwangweiruqin",
       "type": "wenyan"
     },
     {
       "id": 10002,
       "title": "秦一卷1 卫鞅亡魏入秦",
-      "path": "/01-zhanguoce/02-qin/01-shangyang/",
+      "path": "/learn-game/01-zhanguoce/02-qin/01-weiyangwangweiruqin",
       "type": "wenyan"
     },
     {
       "id": 20001,
       "title": "绘本1[代]",
-      "path": "/01-zhanguoce/02-qin/01-shangyang/",
+      "path": "/learn-game/01-zhanguoce/02-qin/01-weiyangwangweiruqin",
       "type": "huiben"
     },
     {
       "id": 20002,
       "title": "绘本2[代]",
-      "path": "/01-zhanguoce/02-qin/01-shangyang/",
+      "path": "/learn-game/01-zhanguoce/02-qin/01-weiyangwangweiruqin",
       "type": "huiben"
     },
     {
       "id": 30001,
       "title": "实验1[代]",
-      "path": "/01-zhanguoce/02-qin/01-shangyang/",
+      "path": "/learn-game/01-zhanguoce/02-qin/01-weiyangwangweiruqin",
       "type": "shiyan"
     },
     {
       "id": 30002,
       "title": "实验2[代]",
-      "path": "/01-zhanguoce/02-qin/01-shangyang/",
+      "path": "/learn-game/01-zhanguoce/02-qin/01-weiyangwangweiruqin",
       "type": "shiyan"
     }
   ],
