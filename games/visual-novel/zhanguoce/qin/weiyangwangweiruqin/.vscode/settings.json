@@ -1,0 +1,9 @@
+{
+    "nuxt.isNuxtApp": false,
+    "files.exclude": {
+        "**/*.rpyc": true,
+        "**/*.rpa": true,
+        "**/*.rpymc": true,
+        "**/cache/": true
+    }
+}
