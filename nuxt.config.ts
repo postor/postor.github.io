@@ -35,7 +35,7 @@ export default defineNuxtConfig({
     registerType: 'autoUpdate',
     includeAssets: ['favicon.ico'],
     manifest: {
-      name: 'Nuxt Game App',
+      name: 'Game App',
       short_name: 'GameApp',
       description: 'Interactive reading and learning experiences available offline.',
       theme_color: '#0f172a',
@@ -47,56 +47,6 @@ export default defineNuxtConfig({
         { src: '/favicon.ico', sizes: '48x48', type: 'image/x-icon' }
       ]
     },
-    workbox: {
-      globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,json,mp3,ogg,wasm,woff2}'],
-      navigateFallback: '/offline',
-      navigateFallbackAllowlist: [/\/book-reading\/.*/, /\/learn-game\/.*/, /\/$/],
-      cleanupOutdatedCaches: true,
-      runtimeCaching: [
-        {
-          urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
-          handler: 'CacheFirst',
-          options: {
-            cacheName: 'google-fonts',
-            cacheableResponse: { statuses: [0, 200] },
-            expiration: {
-              maxEntries: 12,
-              maxAgeSeconds: 60 * 60 * 24 * 365
-            }
-          }
-        },
-        {
-          urlPattern: ({ request }) => request.destination === 'image',
-          handler: 'StaleWhileRevalidate',
-          options: {
-            cacheName: 'image-assets',
-            expiration: {
-              maxEntries: 60,
-              maxAgeSeconds: 60 * 60 * 24 * 30
-            }
-          }
-        },
-        {
-          urlPattern: ({ sameOrigin, request }) => sameOrigin && ['audio', 'font'].includes(request.destination),
-          handler: 'CacheFirst',
-          options: {
-            cacheName: 'media-assets',
-            cacheableResponse: { statuses: [0, 200] },
-            expiration: {
-              maxEntries: 30,
-              maxAgeSeconds: 60 * 60 * 24 * 30
-            }
-          }
-        }
-      ],
-      maximumFileSizeToCacheInBytes: 30 * 1024 * 1024
-    },
-    client: {
-      installPrompt: true
-    },
-    devOptions: {
-      enabled: process.env.NODE_ENV === 'development'
-    }
   },
   i18n: {
     defaultLocale: 'zh',
