@@ -4,7 +4,12 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
   ssr: false,
   // Add Pinia and Tailwind css modules (install packages before use)
-  modules: ['@pinia/nuxt', '@nuxt/ui', '@vite-pwa/nuxt', '@nuxtjs/i18n'],
+  modules: [
+    '@pinia/nuxt',
+    '@nuxt/ui',
+    // '@vite-pwa/nuxt',
+    '@nuxtjs/i18n'
+  ],
   app: {
     head: {
       title: 'Nuxt Game App',
