@@ -1,0 +1,5 @@
+{
+  "name": "Minesweeper Pop",
+  "description": "A cute, mobile-first minesweeper game with touch controls, chording, and local score tracking.",
+  "requestFramePermissions": []
+}

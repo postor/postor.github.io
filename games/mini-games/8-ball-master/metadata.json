@@ -1,0 +1,5 @@
+{
+  "name": "Gemini 8-Ball Master",
+  "description": "A physics-based billiards game using Phaser and Matter.js. Features local PvP and a Single Player vs AI mode using geometric algorithms to calculate strategic shots.",
+  "requestFramePermissions": []
+}

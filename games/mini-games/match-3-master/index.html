@@ -1,0 +1,77 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, shrink-to-fit=no" />
+    <title>Gemini Match-3 Master</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.80.0/dist/phaser.min.js"></script>
+    <style>
+      body {
+        background-color: #0f172a; /* slate-900 */
+        color: #f8fafc;
+        margin: 0;
+        /* Removed overflow:hidden and touch-action:none from body to allow scrolling in menus */
+      }
+      #root {
+        height: 100%;
+      }
+      #game-container {
+        touch-action: none; /* Prevents browser scrolling/zooming ONLY inside the game canvas */
+        outline: none;
+      }
+      #game-container canvas {
+        border-radius: 0.5rem;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        display: block; 
+      }
+      
+      @keyframes flyHeart {
+        0% {
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%) scale(0);
+          opacity: 0;
+        }
+        20% {
+          transform: translate(-50%, -50%) scale(5);
+          opacity: 1;
+        }
+        50% {
+           transform: translate(-50%, -50%) scale(5);
+           opacity: 1;
+        }
+        100% {
+          top: 20px;
+          left: 20px; /* Target the heart container in top left */
+          transform: translate(0, 0) scale(0.5);
+          opacity: 0;
+        }
+      }
+
+      .animate-fly-heart {
+        position: fixed;
+        z-index: 100;
+        pointer-events: none;
+        animation: flyHeart 1.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.31.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.1/",
+    "react/": "https://aistudiocdn.com/react@^19.2.1/",
+    "react": "https://aistudiocdn.com/react@^19.2.1",
+    "phaser": "https://aistudiocdn.com/phaser@^3.90.0"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body>
+    <div id="root"></div>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>

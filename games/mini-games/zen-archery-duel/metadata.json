@@ -1,0 +1,5 @@
+{
+  "name": "Zen Archery Duel",
+  "description": "A physics-based archery battle game against an AI. Features variable wind, breathing mechanics, and multiple difficulty levels.",
+  "requestFramePermissions": []
+}

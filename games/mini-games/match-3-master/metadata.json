@@ -1,0 +1,5 @@
+{
+  "name": "v3 Match-3 Master",
+  "description": "A highly configurable Match-3 game using Phaser and React. Features Unicode-based assets, complex combo systems (Magic, Bomb, Rocket), and AI-powered level generation using Google Gemini.",
+  "requestFramePermissions": []
+}

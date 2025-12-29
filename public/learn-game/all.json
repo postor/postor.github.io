@@ -1,14 +1,38 @@
 {
   "games": [
     {
+      "id": 9001,
+      "title": "消消乐",
+      "path": "/mini-game/match-3-master",
+      "type": "mini-game"
+    },
+    {
+      "id": 9002,
+      "title": "扫雷",
+      "path": "/mini-game/mine-sweeper",
+      "type": "mini-game"
+    },
+    {
+      "id": 9003,
+      "title": "桌球",
+      "path": "/mini-game/8-ball-master",
+      "type": "mini-game"
+    },
+    {
+      "id": 9004,
+      "title": "标枪对战",
+      "path": "/mini-game/zen-archery",
+      "type": "mini-game"
+    },
+    {
       "id": 10001,
-      "title": "东周1 秦兴师临周而求九鼎[代]",
+      "title": "周策 秦兴师临周而求九鼎",
       "path": "/learn-game/01-zhanguoce/02-qin/01-weiyangwangweiruqin",
       "type": "wenyan"
     },
     {
       "id": 10002,
-      "title": "秦一卷1 卫鞅亡魏入秦",
+      "title": "秦策 卫鞅亡魏入秦",
       "path": "/learn-game/01-zhanguoce/02-qin/01-weiyangwangweiruqin",
       "type": "wenyan"
     },
@@ -38,6 +62,15 @@
     }
   ],
   "categories": [
+    {
+      "title": "经典小游戏",
+      "games": [
+        9001,
+        9002,
+        9003,
+        9004
+      ]
+    },
     {
       "title": "绘本",
       "categories": [
