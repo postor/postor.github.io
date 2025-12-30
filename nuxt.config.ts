@@ -47,6 +47,49 @@ export default defineNuxtConfig({
         { src: '/favicon.ico', sizes: '48x48', type: 'image/x-icon' }
       ]
     },
+    workbox: {
+      cleanupOutdatedCaches: true,
+      clientsClaim: true,
+      skipWaiting: true,
+
+      navigateFallback: '/',
+      navigateFallbackAllowlist: [/^\/$/],
+
+      runtimeCaching: [
+        {
+          urlPattern: ({ request }) =>
+            request.destination === 'document',
+          handler: 'NetworkFirst',
+          options: {
+            cacheName: 'pages',
+          },
+        },
+        {
+          urlPattern: ({ request }) =>
+            ['script', 'style', 'worker'].includes(request.destination),
+          handler: 'CacheFirst',
+          options: {
+            cacheName: 'assets',
+            expiration: {
+              maxEntries: 100,
+              maxAgeSeconds: 60 * 60 * 24 * 30,
+            },
+          },
+        },
+        {
+          urlPattern: ({ request }) =>
+            request.destination === 'image',
+          handler: 'CacheFirst',
+          options: {
+            cacheName: 'images',
+            expiration: {
+              maxEntries: 100,
+              maxAgeSeconds: 60 * 60 * 24 * 60,
+            },
+          },
+        },
+      ],
+    },
   },
   i18n: {
     defaultLocale: 'zh',
